@@ -32,7 +32,7 @@ export type ShowResult = { ok: true; via: 'service-worker' | 'window' } | { ok: 
 export async function showSystemNotification(title: string, body: string, tag: string): Promise<ShowResult> {
   if (!('Notification' in window)) return { ok: false, reason: 'This browser does not support notifications.' };
   if (Notification.permission !== 'granted') return { ok: false, reason: Notification.permission === 'denied' ? 'Notifications are blocked for this site in your browser settings.' : 'Notification permission has not been granted yet.' };
-  const options: NotificationOptions = { body, tag, icon: './icon.svg', badge: './icon.svg', data: { url: './#/' } };
+  const options: NotificationOptions = { body, tag, icon: './icon-192.png', badge: './favicon-48.png', data: { url: './#/' } };
   try {
     if ('serviceWorker' in navigator) {
       const reg = await Promise.race([navigator.serviceWorker.getRegistration(), new Promise<undefined>((r) => setTimeout(() => r(undefined), 1500))]);
