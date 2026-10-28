@@ -2,8 +2,8 @@ import type { Habit } from '../domain/types';
 
 /**
  * Canonical habit seed. Weekly rotation (0 = Sunday):
- *   Mon fitness + quarterback · Tue mobility + reading emphasis · Wed fitness + finance
- *   Thu quarterback · Fri fitness + confidence · Sat flexible · Sun recovery, reflection, planning
+ *   Mon fitness + skill practice · Tue mobility + reading emphasis · Wed fitness + finance
+ *   Thu skill practice · Fri fitness + confidence · Sat flexible · Sun recovery, reflection, planning
  * Everything is editable later; the 30-day challenge is tracked separately and never overridden.
  */
 
@@ -20,7 +20,7 @@ const SEEDS: HabitSeed[] = [
 
   // ---- Rotating weekly
   { id: 'fitness', name: 'Fitness', category: 'Fitness', kind: 'build', input: 'activity', section: 'scheduled', days: [1, 3, 5], options: ['Strength', 'Running', 'Cardio', 'Sport', 'Bodyweight', 'Swimming', 'Walk', 'Rest / recovery'], description: 'Balanced training with recovery days. Log the type of training — no calorie tracking. Rest is a valid choice.' },
-  { id: 'quarterback', name: 'Quarterback development', category: 'Football', kind: 'build', input: 'activity', section: 'scheduled', days: [1, 4], options: ['Throwing', 'Mechanics / footwork', 'Film / learning', 'Rest / recovery'], description: 'Throwing, mechanics or football-learning sessions. Mark rest days when your arm needs them.' },
+  { id: 'skill', name: 'Skill practice', category: 'Skills', kind: 'build', input: 'activity', section: 'scheduled', days: [1, 4], options: ['Drills / technique', 'Practice session', 'Study / watch & learn', 'Rest / recovery'], description: 'Focused practice on a sport, instrument or craft you want to get better at. Mark rest days when you need them.' },
   { id: 'mobility', name: 'Mobility', category: 'Fitness', kind: 'build', input: 'minutes', section: 'scheduled', days: [2, 0], target: 10, unit: 'min', description: 'About 10 minutes of comfortable mobility work. Nothing should hurt.' },
   { id: 'finance', name: 'Financial knowledge', category: 'Learning', kind: 'build', input: 'minutes', section: 'scheduled', days: [3], target: 15, unit: 'min', description: '15 minutes on budgeting, saving or investing fundamentals.' },
   { id: 'confidence', name: 'Confidence action', category: 'Growth', kind: 'build', input: 'text', section: 'scheduled', days: [5], description: 'One small, self-chosen confidence-building action. Write down what you attempted.' },

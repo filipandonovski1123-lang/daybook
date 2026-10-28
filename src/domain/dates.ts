@@ -6,7 +6,8 @@ import type { IsoDate, LocalTime } from './types';
  * Converting between a wall-clock time in a timezone and an instant goes through Intl.
  */
 
-export const DEFAULT_TIMEZONE = 'Australia/Sydney';
+/** Used only if the device can't report its own timezone. */
+export const DEFAULT_TIMEZONE = 'UTC';
 
 export function isValidTimeZone(tz: string): boolean {
   try {
@@ -135,7 +136,7 @@ export function fromMinutes(mins: number): LocalTime {
   return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
 }
 
-/** Offset of `tz` from UTC at instant `ms`, in milliseconds (e.g. +11h for Sydney in summer). */
+/** Offset of `tz` from UTC at instant `ms`, in milliseconds (e.g. +11h for Sydney in summer, −4h for New York). */
 export function tzOffsetMs(ms: number, tz: string): number {
   const p = zonedParts(ms, tz);
   const asUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);

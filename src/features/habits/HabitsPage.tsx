@@ -12,10 +12,10 @@ import { HabitRow, habitTargetLabel, SupportNote } from './HabitRow';
 
 const ORDER = [1, 2, 3, 4, 5, 6, 0];
 const ROTATION_NOTE: Record<number, string> = {
-  1: 'Fitness + quarterback',
+  1: 'Fitness + skill practice',
   2: 'Mobility + reading',
   3: 'Fitness + finance',
-  4: 'Quarterback',
+  4: 'Skill practice',
   5: 'Fitness + confidence',
   6: 'Flexible',
   0: 'Recovery + planning',

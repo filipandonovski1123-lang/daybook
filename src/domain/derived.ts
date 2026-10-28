@@ -57,7 +57,8 @@ export function derivedValues(challengeId: string, m: MetricsRecord): DerivedVal
       const s = num(m.startRating);
       const e = num(m.endRating);
       if (s !== null && e !== null) out.push({ key: 'ratingChange', label: 'Rating change', value: e - s });
-      if (e !== null) out.push({ key: 'reached1500', label: '1500 reached', value: e >= 1500 });
+      const target = num(m.targetRating);
+      if (e !== null && target !== null) out.push({ key: 'reachedTarget', label: 'Rating target reached', value: e >= target });
       break;
     }
     case 'day-29': {

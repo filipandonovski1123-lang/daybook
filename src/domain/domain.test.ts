@@ -122,8 +122,9 @@ describe('seed data', () => {
 
   it('keeps the canonical titles', () => {
     expect(challenges[0]?.title).toBe('Learn to Juggle Three Balls');
-    expect(challenges[12]?.title).toBe('The Quarterback Accuracy Challenge');
-    expect(challenges[27]?.title).toBe('Become a Chess Competitor: 1500 Rapid Elo Goal');
+    expect(challenges[2]?.title).toBe('Learn Basic Sign Language');
+    expect(challenges[12]?.title).toBe('The Throwing Accuracy Challenge');
+    expect(challenges[27]?.title).toBe('Become a Chess Competitor');
     expect(challenges[29]?.title).toBe('THE FINAL BOSS: Solve a 12-Sided Megaminx');
   });
 
@@ -149,8 +150,8 @@ describe('seed data', () => {
 
   it('day 28 separates the stretch goal from the daily task', () => {
     const chess = challenges[27];
-    expect(chess?.stretchGoal).toMatch(/1500/);
-    expect(chess?.objective).not.toMatch(/1500/);
+    expect(chess?.stretchGoal).toMatch(/target you set/);
+    expect(chess?.objective).not.toMatch(/target/);
   });
 
   it('seeds valid habits with the sensitive habit discreet', () => {
@@ -184,18 +185,19 @@ describe('criteria & personal bests', () => {
     expect(checkCompletion(byDay(2), { metrics: { ...m, finalSeconds: 230 }, checked: [] }, []).mainMet).toBe(false);
   });
 
-  it('day 13 quarterback requires +25% and comparable conditions', () => {
+  it('day 13 throwing accuracy requires +25% and comparable conditions', () => {
     const c = byDay(13);
     expect(checkCompletion(c, { metrics: { baseHits: 12, finalHits: 15 }, checked: ['comparable'] }, []).mainMet).toBe(true); // +25%
     expect(checkCompletion(c, { metrics: { baseHits: 12, finalHits: 14 }, checked: ['comparable'] }, []).mainMet).toBe(false);
     expect(checkCompletion(c, { metrics: { baseHits: 12, finalHits: 15 }, checked: [] }, []).mainMet).toBe(false);
   });
 
-  it('day 28 chess derives games and rating change; never claims 1500', () => {
+  it('day 28 chess derives games and rating change against the user’s own target', () => {
     const m = withDerived('day-28', { startRating: 1200, endRating: 1235, wins: 4, draws: 1, losses: 3, analysed: 8 });
     expect(m.gamesPlayed).toBe(8);
     expect(m.ratingChange).toBe(35);
-    expect(m.reached1500).toBe(false);
+    expect(m.reachedTarget).toBeUndefined(); // no target set
+    expect(withDerived('day-28', { endRating: 1235, targetRating: 1200 }).reachedTarget).toBe(true);
     expect(checkCompletion(byDay(28), { metrics: { wins: 4, draws: 1, losses: 3, analysed: 8 }, checked: [] }, []).mainMet).toBe(true);
   });
 
@@ -262,7 +264,7 @@ describe('habits', () => {
   });
 
   it('adherence counts only planned habits, excludes rest and sensitive by default', () => {
-    const date = '2026-11-23'; // Monday: fitness + quarterback planned, not mobility
+    const date = '2026-11-23'; // Monday: fitness + skill practice planned, not mobility
     const entries: HabitEntry[] = [
       { id: 'a', habitId: 'reading', date, status: 'done', value: 20, text: '', extra: {}, notes: '', planned: true, updatedAt: 0 },
       { id: 'b', habitId: 'fitness', date, status: 'rest', value: null, text: '', extra: {}, notes: '', planned: true, updatedAt: 0 },

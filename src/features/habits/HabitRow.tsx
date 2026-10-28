@@ -340,7 +340,7 @@ export function SupportNote() {
   return (
     <div className="mt-2 rounded-xl border border-line bg-surface p-3 text-xs leading-relaxed text-ink-2">
       <p>If this is causing you real distress or feels out of your control, you don’t have to handle it alone. Talking to a trusted adult, your GP, or a counsellor genuinely helps, and it’s a common thing for them to hear.</p>
-      <p className="mt-1.5">In Australia: Kids Helpline 1800 55 1800 (ages 5–25, 24/7) · Lifeline 13 11 14 · headspace.org.au. In an emergency call 000.</p>
+      <p className="mt-1.5">To find a free, confidential helpline in your country, visit findahelpline.com. If you’re in danger or crisis right now, call your local emergency number.</p>
     </div>
   );
 }

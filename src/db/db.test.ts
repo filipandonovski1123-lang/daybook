@@ -216,3 +216,44 @@ describe('backup', () => {
     expect(await db.habitEntries.count()).toBe(1);
   });
 });
+
+describe('v2 migration (general-purpose content)', () => {
+  it('updates untouched person-specific seed text, keeps user edits and progress', async () => {
+    const { default: Dexie } = await import('dexie');
+    const { ChallengeDB } = await import('./db');
+    const { buildChallenges } = await import('../data/challenges');
+    const { buildHabits } = await import('../data/habits');
+    const name = 'migration-test';
+    await Dexie.delete(name);
+    const v1 = new Dexie(name);
+    v1.version(1).stores({
+      settings: 'id', program: 'id', challenges: 'id, day', revisions: 'id, challengeId, at', progress: 'id, challengeId, status',
+      attempts: 'id, challengeId, date, at', evidence: 'id, challengeId, createdAt', evidenceFiles: 'id', habits: 'id, order',
+      habitEntries: 'id, habitId, date', reflections: 'id, date', reminders: 'id', achievements: 'id', notificationLog: 'id, date', timers: 'id',
+    });
+    const seeds = buildChallenges(0);
+    const old = seeds.map((c) =>
+      c.id === 'day-03' ? { ...c, title: 'Learn Basic Auslan' } : c.id === 'day-13' ? { ...c, title: 'The Quarterback Accuracy Challenge', category: 'American Football' } : c.id === 'day-28' ? { ...c, title: 'Become a Chess Competitor: 1500 Rapid Elo Goal' } : c,
+    );
+    await v1.table('challenges').bulkAdd(old);
+    // The user edited Day 13 by hand → must be left alone.
+    await v1.table('revisions').add({ id: 'r1', challengeId: 'day-13', at: 1, previous: old[12] });
+    await v1.table('progress').add({ id: 'day-03', challengeId: 'day-03', status: 'completed', notes: 'kept' });
+    const habits = buildHabits().filter((h) => h.id !== 'skill');
+    await v1.table('habits').bulkAdd([...habits, { ...buildHabits().find((h) => h.id === 'skill')!, id: 'quarterback', name: 'Quarterback development', category: 'Football' }]);
+    await v1.table('settings').add({ id: 'settings', equipment: ['football', 'chess'] });
+    v1.close();
+
+    const db2 = new ChallengeDB(name);
+    await db2.open();
+    expect((await db2.challenges.get('day-03'))?.title).toBe('Learn Basic Sign Language');
+    expect((await db2.challenges.get('day-28'))?.title).toBe('Become a Chess Competitor');
+    expect((await db2.challenges.get('day-13'))?.title).toBe('The Quarterback Accuracy Challenge');
+    expect((await db2.progress.get('day-03'))?.notes).toBe('kept');
+    const qb = await db2.habits.get('quarterback');
+    expect(qb?.name).toBe('Skill practice');
+    expect((await db2.settings.get('settings'))?.equipment).toEqual(['throwing', 'chess']);
+    db2.close();
+    await Dexie.delete(name);
+  });
+});

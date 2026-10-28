@@ -63,7 +63,7 @@ export function Onboarding() {
 
         <Card className="animate-fade-up p-5 md:p-7" key={step}>
           {step === 0 && (
-            <StepBody icon={<Sparkles />} title="Thirty days. Thirty new skills." lead="A private tracker for your post-exam challenge: one unique challenge a day, sustainable daily habits, honest progress.">
+            <StepBody icon={<Sparkles />} title="Thirty days. Thirty new skills." lead="A private tracker for a 30-day self-improvement challenge: one new skill a day, sustainable daily habits, honest progress.">
               <ul className="mb-5 space-y-2 text-sm text-ink-2">
                 {['Everything stays on this device. No account, no tracking.', 'Daily habits rotate so you’re never doing everything at once.', 'Missed days stay visible. You decide how to catch up.'].map((t) => (
                   <li key={t} className="flex gap-2">
@@ -79,7 +79,7 @@ export function Onboarding() {
           )}
 
           {step === 1 && (
-            <StepBody icon={<CalendarDays />} title="When does Day 1 start?" lead="Pick the first day after your exams. Day 30 lands 29 days later. You can change this freely until the program begins.">
+            <StepBody icon={<CalendarDays />} title="When does Day 1 start?" lead="Pick the day you want to begin. Day 30 lands 29 days later. You can change this freely until the program begins.">
               <div className="grid gap-4">
                 <Field label="Start date" htmlFor="ob-start" error={dateError}>
                   <Input id="ob-start" type="date" value={form.startDate} min={addDays(today, -7)} onChange={(e) => set('startDate', e.target.value)} required />
@@ -288,7 +288,7 @@ export function PermissionCard({ permission, onRequest }: { permission: string; 
   );
 }
 
-const COMMON_TZ = ['Australia/Sydney', 'Australia/Melbourne', 'Australia/Brisbane', 'Australia/Adelaide', 'Australia/Perth', 'Australia/Hobart', 'Australia/Darwin', 'Pacific/Auckland', 'Europe/London', 'America/New_York', 'America/Los_Angeles', 'Asia/Singapore', 'UTC'];
+const COMMON_TZ = ['UTC', 'America/Los_Angeles', 'America/Denver', 'America/Chicago', 'America/New_York', 'America/Sao_Paulo', 'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Africa/Johannesburg', 'Asia/Dubai', 'Asia/Kolkata', 'Asia/Singapore', 'Asia/Tokyo', 'Australia/Sydney', 'Pacific/Auckland'];
 
 export function TimezoneInput({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) {
   const all = useMemo(() => {
