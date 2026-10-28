@@ -31,7 +31,7 @@ Data is stored **per browser and per device**. The phone and the laptop don't sy
 
 ## Photos
 
-The design uses three landscape images. Until you add your own, drawn misty landscapes are shown in their place. To use photos, put JPEGs in `public/images/` with these names, then rebuild:
+The design uses three landscape photos. Until they are added, those spots are simply left out. To add them, put JPEGs in `public/images/` with these names and push:
 
 | File | Where it appears | Suggested size |
 |---|---|---|

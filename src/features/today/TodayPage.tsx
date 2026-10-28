@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { ArrowRight, Bell, Check, ChevronLeft, ChevronRight, Flag, MoonStar, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { quoteFor, QuoteCard, Scene } from '../../components/Scene';
+import { quoteFor, QuoteCard, Scene, usePhoto } from '../../components/Scene';
 import { Button, Disclosure, ProgressRing } from '../../components/ui';
 import { addDays, endOfDayEpoch, formatDate, nowTimeIn } from '../../domain/dates';
 import { dayAdherence } from '../../domain/habits';
@@ -21,6 +21,7 @@ export function TodayPage() {
   const { data, today } = useApp();
   const view = useProgramView();
   const [viewDate, setViewDate] = useState<IsoDate | null>(null);
+  const hero = usePhoto('coast') === 'ok';
   if (!view) return null;
   const date = viewDate ?? today;
   const isToday = date === today;
@@ -82,7 +83,7 @@ export function TodayPage() {
       {/* Hero + overlapping checklist */}
       <div className="relative mt-6">
         <Scene kind="coast" className="-mx-5 h-[210px] md:mx-0 md:h-[240px] md:rounded-xl" />
-        <div className="relative -mt-8 md:-mt-10 md:grid md:grid-cols-[1.35fr_1fr] md:items-start md:gap-4 md:px-4">
+        <div className={clsx('relative md:grid md:grid-cols-[1.35fr_1fr] md:items-start md:gap-4', hero && '-mt-8 md:-mt-10 md:px-4')}>
           <Checklist date={date} challenge={challenge} isToday={isToday} />
           <ProgressSummary date={date} challenge={challenge} className="hidden md:block" />
         </div>
