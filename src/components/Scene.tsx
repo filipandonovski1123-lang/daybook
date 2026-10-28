@@ -7,6 +7,7 @@ import { prefersReducedMotion } from '../lib/motion';
  * rendered — no placeholder art — and layouts close up around the missing image.
  */
 export type SceneKind = 'coast' | 'peaks' | 'ridge';
+export type BackdropKind = 'welcome' | 'habits' | 'calendar' | 'progress' | 'reflection';
 
 const PHOTO: Record<SceneKind, string> = {
   coast: './images/hero.jpg',
@@ -14,21 +15,34 @@ const PHOTO: Record<SceneKind, string> = {
   ridge: './images/quote-2.jpg',
 };
 
+const BACKDROP: Record<BackdropKind, string> = {
+  welcome: './images/bg-welcome.jpg',
+  habits: './images/bg-habits.jpg',
+  calendar: './images/bg-calendar.jpg',
+  progress: './images/bg-progress.jpg',
+  reflection: './images/bg-reflection.jpg',
+};
+
 type Probe = 'loading' | 'ok' | 'none';
-const probes = new Map<SceneKind, Probe>();
+const probes = new Map<string, Probe>();
 const listeners = new Set<() => void>();
 
-function probe(kind: SceneKind) {
-  if (probes.has(kind) || typeof Image === 'undefined') return;
-  probes.set(kind, 'loading');
+function probe(url: string) {
+  if (probes.has(url) || typeof Image === 'undefined') return;
+  probes.set(url, 'loading');
   const img = new Image();
   const done = (p: Probe) => {
-    probes.set(kind, p);
+    probes.set(url, p);
     listeners.forEach((fn) => fn());
   };
   img.onload = () => done('ok');
   img.onerror = () => done('none');
-  img.src = PHOTO[kind];
+  img.src = url;
+}
+
+function useImage(url: string): Probe {
+  probe(url);
+  return useSyncExternalStore(subscribe, () => probes.get(url) ?? 'loading', () => 'loading');
 }
 
 function subscribe(fn: () => void) {
@@ -38,8 +52,7 @@ function subscribe(fn: () => void) {
 
 /** Whether the photo for `kind` exists. Checked once per session and shared. */
 export function usePhoto(kind: SceneKind): Probe {
-  probe(kind);
-  return useSyncExternalStore(subscribe, () => probes.get(kind) ?? 'loading', () => 'loading');
+  return useImage(PHOTO[kind]);
 }
 
 export function Scene({ kind, className, hero = false }: { kind: SceneKind; className?: string; hero?: boolean }) {
@@ -107,4 +120,28 @@ const QUOTES = [
 
 export function quoteFor(day: number): string {
   return QUOTES[(Math.max(1, day) - 1) % QUOTES.length] ?? QUOTES[0]!;
+}
+
+/**
+ * A faint photo at the top of a page that dissolves into the paper background.
+ * Decorative only: it sits behind the heading area, never behind dense content, and is
+ * skipped entirely if the file is missing. `full` covers the whole screen (onboarding).
+ */
+export function Backdrop({ kind, full = false }: { kind: BackdropKind; full?: boolean }) {
+  const url = BACKDROP[kind];
+  const photo = useImage(url);
+  if (photo !== 'ok') return null;
+  const mask = full
+    ? 'linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.3) 100%)'
+    : 'linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.85) 45%, transparent 100%)';
+  return (
+    <div className={clsx('pointer-events-none absolute inset-x-0 top-0 -z-10 overflow-hidden', full ? 'fixed inset-0 h-dvh' : 'h-[380px] md:h-[460px]')} aria-hidden>
+      <img
+        src={url}
+        alt=""
+        className={clsx('animate-fade size-full object-cover', full ? 'opacity-[0.6] dark:opacity-[0.3]' : 'opacity-[0.55] dark:opacity-[0.28]')}
+        style={{ maskImage: mask, WebkitMaskImage: mask }}
+      />
+    </div>
+  );
 }

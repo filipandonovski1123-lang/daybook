@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { ArrowLeft, ArrowRight, Bell, CalendarDays, Check, Dumbbell, Moon, Package, Shield, Sparkles } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
+import { Backdrop } from '../../components/Scene';
 import { Logo } from '../../components/Shell';
 import { Badge, Button, Card, Checkbox, Field, Input, Switch, Textarea } from '../../components/ui';
 import { EQUIPMENT } from '../../data/challenges';
@@ -43,7 +44,8 @@ export function Onboarding() {
   const canNext = step !== 1 || (form.startDate && !dateError && isValidTimeZone(form.timezone));
 
   return (
-    <div className="min-h-dvh px-4 py-8 md:py-14">
+    <div className="relative isolate min-h-dvh px-4 py-8 md:py-14">
+      <Backdrop kind="welcome" full />
       <div className="mx-auto w-full max-w-xl">
         <div className="mb-6 flex items-center gap-3">
           <Logo />

@@ -3,6 +3,7 @@ import { BookOpen, CalendarDays, ChartNoAxesColumn, Ellipsis, LayoutGrid, ListCh
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 import { syncAchievements } from '../db/actions';
+import { Backdrop, type BackdropKind } from './Scene';
 import { ACHIEVEMENTS, deriveAchievements } from '../domain/stats';
 import { useApp } from '../lib/appData';
 import { useToast } from '../lib/toast';
@@ -22,6 +23,15 @@ const TABS = [
   { to: '/progress', label: 'Progress', icon: ChartNoAxesColumn, end: false },
   { to: '/more', label: 'More', icon: Ellipsis, end: false },
 ] as const;
+
+/** Faint photo behind the top of these screens. Today, challenge pages, Settings and Tools stay plain. */
+const BACKDROP_FOR: [string, BackdropKind][] = [
+  ['/reflection', 'reflection'],
+  ['/progress', 'progress'],
+  ['/calendar', 'calendar'],
+  ['/habits', 'habits'],
+  ['/more', 'calendar'],
+];
 
 export function Wordmark({ compact = false }: { compact?: boolean }) {
   return (
@@ -51,6 +61,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
   const more = ['/more', '/habits', '/settings', '/reflection', '/tools'].some((p) => location.pathname.startsWith(p));
   const calendar = location.pathname.startsWith('/challenge');
+  const backdrop = BACKDROP_FOR.find(([p]) => location.pathname.startsWith(p))?.[1];
 
   return (
     <div className="min-h-dvh md:flex">
@@ -81,7 +92,8 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
       </aside>
 
-      <div className="min-w-0 flex-1">
+      <div className="relative isolate min-w-0 flex-1">
+        {backdrop && <Backdrop key={backdrop} kind={backdrop} />}
         {/* Mobile top bar */}
         <header className="flex items-center justify-between px-5 pb-1 pt-[max(14px,env(safe-area-inset-top))] md:hidden">
           <Link to="/" aria-label="30 Day Challenge, Today">
