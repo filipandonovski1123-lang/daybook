@@ -30,7 +30,7 @@ export default defineConfig({
       filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectRegister: false,
-      injectManifest: { globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'] },
+      injectManifest: { globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2}'] },
       devOptions: { enabled: false },
       manifest: {
         name: '30-Day Challenge',

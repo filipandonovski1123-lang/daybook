@@ -38,7 +38,7 @@ export function defaultSettings(now = Date.now()): Settings {
     sleepTargetHours: 8.5,
     bedtime: '22:30',
     quietHours: { enabled: true, start: '22:30', end: '07:00' },
-    theme: 'dark',
+    theme: 'light',
     hardMode: false,
     reducedMotion: 'system',
     hideSensitiveOnToday: false,
@@ -533,7 +533,7 @@ export async function deleteHabit(id: string, withEntries: boolean): Promise<voi
 // ---------------------------------------------------------------- reflections
 
 export function blankReflection(date: IsoDate): Reflection {
-  return { id: date, date, completedChallenge: null, improvement: '', difficult: '', proud: '', change: '', mood: null, energy: null, updatedAt: 0 };
+  return { id: date, date, completedChallenge: null, entry: '', takeaway: '', improvement: '', difficult: '', proud: '', change: '', mood: null, energy: null, updatedAt: 0 };
 }
 
 export async function saveReflection(date: IsoDate, patch: Partial<Omit<Reflection, 'id' | 'date'>>, now = Date.now()): Promise<void> {

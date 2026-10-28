@@ -1,10 +1,12 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router';
 import { Shell } from './components/Shell';
-import { ChallengeDetailPage } from './features/challenges/ChallengeDetailPage';
+import { ChallengeDetailPage, CurrentChallengeRedirect } from './features/challenges/ChallengeDetailPage';
 import { ChallengesPage } from './features/challenges/ChallengesPage';
 import { HabitsPage } from './features/habits/HabitsPage';
+import { MorePage } from './features/more/MorePage';
 import { Onboarding } from './features/onboarding/Onboarding';
+import { ReflectionPage } from './features/reflection/ReflectionPage';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { TodayPage } from './features/today/TodayPage';
 import { AppDataProvider, useApp } from './lib/appData';
@@ -33,7 +35,11 @@ function Ready() {
           <Suspense fallback={<PageSpinner />}>
             <Routes>
               <Route path="/" element={<TodayPage />} />
-              <Route path="/challenges" element={<ChallengesPage />} />
+              <Route path="/calendar" element={<ChallengesPage />} />
+              <Route path="/challenges" element={<Navigate to="/calendar" replace />} />
+              <Route path="/challenge" element={<CurrentChallengeRedirect />} />
+              <Route path="/reflection" element={<ReflectionPage />} />
+              <Route path="/more" element={<MorePage />} />
               <Route path="/challenges/:id" element={<ChallengeDetailPage />} />
               <Route path="/habits" element={<HabitsPage />} />
               <Route path="/progress" element={<ProgressPage />} />
@@ -58,7 +64,7 @@ function useThemeSync() {
     const apply = () => {
       const dark = theme === 'dark' || (theme === 'system' && mq.matches);
       root.classList.toggle('dark', dark);
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0b0d12' : '#f6f7f9');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#141618' : '#f2f0eb');
       try {
         localStorage.setItem('theme', dark ? 'dark' : 'light');
       } catch {

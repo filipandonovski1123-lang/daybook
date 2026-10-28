@@ -39,7 +39,7 @@ describe('app', () => {
     await user.click(screen.getByRole('radio', { name: /^Hard Mode/ }));
     await user.click(screen.getByRole('button', { name: 'Start my program' }));
 
-    await screen.findByText(/Starts in 1 day/);
+    await screen.findByText(/starts in 1 day/);
     expect((await db.program.get('program'))?.startDate).toBe(tomorrow);
     expect((await db.settings.get('settings'))?.hardMode).toBe(true);
     // Hard Mode bar only appears once the program is active.
@@ -56,9 +56,9 @@ describe('app', () => {
     await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), startedAt: null, history: [] });
     await updateSettings({ onboarded: true });
     render(<App />);
-    await screen.findByText(/Day 1/, { selector: 'h1' });
-    const personal = screen.getByRole('heading', { name: 'Personal habit goals' }).closest('section, div')!;
-    expect(within(personal as HTMLElement).getByText('Personal habit goal')).toBeInTheDocument();
+    await screen.findByRole('heading', { name: 'Learn to Juggle Three Balls', level: 1 });
+    const personal = screen.getByRole('heading', { name: 'Personal habit goals' }).parentElement!;
+    expect(within(personal).getByText('Personal habit goal')).toBeInTheDocument();
     expect(screen.queryByText(/sexual|porn/i)).not.toBeInTheDocument();
     await updateSettings({ hideSensitiveOnToday: true });
     await waitFor(() => expect(screen.queryByText('Personal habit goal')).not.toBeInTheDocument());
@@ -68,11 +68,11 @@ describe('app', () => {
     await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), startedAt: null, history: [] });
     await updateSettings({ onboarded: true });
     render(<App />);
-    await screen.findByText(/Day 1/, { selector: 'h1' });
-    const navs = screen.getAllByRole('navigation', { name: 'Main' });
-    for (const nav of navs) {
-      for (const name of ['Today', 'Challenges', 'Habits', 'Progress', 'Settings']) expect(within(nav).getByRole('link', { name })).toBeInTheDocument();
-    }
+    await screen.findByRole('heading', { name: 'Learn to Juggle Three Balls', level: 1 });
+    const [sidebar, tabs] = screen.getAllByRole('navigation', { name: 'Main' });
+    for (const name of ['Today', 'Calendar', 'Challenge', 'Habits', 'Progress', 'Reflections']) expect(within(sidebar!).getByRole('link', { name })).toBeInTheDocument();
+    for (const name of ['Today', 'Calendar', 'Progress', 'More']) expect(within(tabs!).getByRole('link', { name })).toBeInTheDocument();
+    expect(within(screen.getByRole('navigation', { name: 'Secondary' })).getByRole('link', { name: 'Settings' })).toBeInTheDocument();
     expect(screen.getByText('Skip to content')).toBeInTheDocument();
   });
 });

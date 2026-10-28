@@ -81,7 +81,7 @@ export function HabitsPage() {
               const items = data.habits.filter((h) => h.enabled && h.section === 'scheduled' && h.days.includes(wd));
               return (
                 <div key={wd} className="rounded-lg bg-surface-2 p-2">
-                  <p className="text-xs font-bold">{WEEKDAY_SHORT[wd]}</p>
+                  <p className="text-xs font-semibold">{WEEKDAY_SHORT[wd]}</p>
                   <p className="mb-1.5 text-[10.5px] leading-tight text-ink-3">{ROTATION_NOTE[wd]}</p>
                   <ul className="space-y-1">
                     {items.map((h) => (
@@ -139,7 +139,7 @@ function HabitStrip({ habit }: { habit: Habit }) {
   const color = (d: string) => {
     const e = data.entries.find((x) => x.id === entryId(habit.id, d));
     if (!e) return isPlannedOn(habit, d) && d < today ? 'bg-surface-3' : 'bg-surface-2';
-    return e.status === 'done' ? 'bg-success' : e.status === 'partial' ? 'bg-accent' : e.status === 'rest' ? 'bg-info' : 'bg-line-strong';
+    return e.status === 'done' ? 'bg-success' : e.status === 'partial' ? 'bg-slate' : e.status === 'rest' ? 'bg-info' : 'bg-line-strong';
   };
   return (
     <div className={clsx('mt-2 flex gap-[3px]', habit.sensitive && 'privacy-blur')} tabIndex={habit.sensitive ? 0 : undefined} aria-label={`${displayName(habit)}: last 14 days`} role="img">
@@ -156,7 +156,7 @@ function DaysPicker({ days, onChange }: { days: number[]; onChange: (d: number[]
       {ORDER.map((d) => {
         const on = days.includes(d);
         return (
-          <button key={d} type="button" aria-pressed={on} onClick={() => onChange(on ? days.filter((x) => x !== d) : [...days, d])} className={clsx('h-9 w-11 rounded-lg border text-xs font-semibold transition-colors', on ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface-2 text-ink-3 hover:text-ink')}>
+          <button key={d} type="button" aria-pressed={on} onClick={() => onChange(on ? days.filter((x) => x !== d) : [...days, d])} className={clsx('h-9 w-11 rounded-lg border text-xs font-semibold transition-colors', on ? 'border-accent bg-surface-2 text-slate' : 'border-line bg-surface-2 text-ink-3 hover:text-ink')}>
             {WEEKDAY_SHORT[d]}
           </button>
         );

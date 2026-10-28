@@ -13,11 +13,11 @@ import { STATUS_ICON } from '../challenges/shared';
 import { CategoryBars, PbBars, PercentBars } from './Charts';
 
 const STRIP: Record<string, string> = {
-  upcoming: 'bg-surface-2 text-ink-3',
-  available: 'bg-accent-soft text-accent',
-  in_progress: 'bg-info-soft text-info',
-  completed: 'bg-success-soft text-success',
-  attempted: 'bg-violet-soft text-violet',
+  upcoming: 'bg-surface-3 text-ink-2',
+  available: 'bg-surface text-ink ring-2 ring-inset ring-slate',
+  in_progress: 'bg-surface text-ink ring-1 ring-inset ring-slate',
+  completed: 'bg-slate text-white dark:text-[#14181c]',
+  attempted: 'bg-slate-soft text-slate',
   missed: 'bg-danger-soft text-danger',
   rescheduled: 'bg-warn-soft text-warn',
 };
@@ -91,7 +91,7 @@ export default function ProgressPage() {
             const Icon = STATUS_ICON[s];
             return (
               <li key={c.id}>
-                <Link to={`/challenges/${c.id}`} className={clsx('flex h-9 flex-col items-center justify-center rounded-md text-[10px] font-bold sm:h-10', STRIP[s])} title={`Day ${c.day}: ${STATUS_LABEL[s]}`} aria-label={`Day ${c.day}: ${STATUS_LABEL[s]}`}>
+                <Link to={`/challenges/${c.id}`} className={clsx('flex h-9 flex-col items-center justify-center rounded-full text-[10px] font-bold sm:h-10', STRIP[s])} title={`Day ${c.day}: ${STATUS_LABEL[s]}`} aria-label={`Day ${c.day}: ${STATUS_LABEL[s]}`}>
                   <span className="tnum leading-none">{c.day}</span>
                   <Icon className="mt-0.5 size-3" aria-hidden />
                 </Link>
@@ -176,7 +176,7 @@ export default function ProgressPage() {
         <div className="mt-6 space-y-2">
           {stats.tips.map((t) => (
             <p key={t} className="flex gap-2.5 rounded-xl bg-surface-2 p-3 text-sm leading-relaxed text-ink-2">
-              <Lightbulb className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden /> {t}
+              <Lightbulb className="mt-0.5 size-4 shrink-0 text-slate" aria-hidden /> {t}
             </p>
           ))}
         </div>
@@ -190,7 +190,7 @@ export default function ProgressPage() {
             return (
               <li key={t}>
                 <Card className={clsx('flex items-start gap-3 p-4', !a && 'opacity-60')}>
-                  <span className={clsx('flex size-9 shrink-0 items-center justify-center rounded-lg', a ? 'bg-accent-soft text-accent' : 'bg-surface-2 text-ink-3')}>{a ? <Award className="size-5" /> : <Lock className="size-4" />}</span>
+                  <span className={clsx('flex size-9 shrink-0 items-center justify-center rounded-lg', a ? 'bg-surface-2 text-slate' : 'bg-surface-2 text-ink-3')}>{a ? <Award className="size-5" /> : <Lock className="size-4" />}</span>
                   <div className="min-w-0">
                     <p className="font-semibold">{ACHIEVEMENTS[t].title}</p>
                     <p className="text-xs text-ink-3">{a ? `${formatInstant(a.earnedAt, data.settings.timezone)} · ${a.relatedEvent}` : ACHIEVEMENTS[t].description}</p>

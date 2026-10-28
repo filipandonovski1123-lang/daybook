@@ -33,7 +33,7 @@ export default function ToolsPage() {
             return (
               <Link key={id} to={`/tools/${id}`}>
                 <Card className="flex items-center gap-3 p-4 transition-colors hover:border-line-strong">
-                  <span className="flex size-9 items-center justify-center rounded-lg bg-accent-soft text-accent">
+                  <span className="flex size-9 items-center justify-center rounded-lg bg-surface-2 text-slate">
                     <M.icon className="size-4" />
                   </span>
                   <span className="font-medium">{M.label}</span>
@@ -68,7 +68,7 @@ export default function ToolsPage() {
 function BigTime({ ms, label }: { ms: number; label?: string }) {
   return (
     <div className="py-6 text-center">
-      <p className="tnum text-6xl font-bold tracking-tight md:text-7xl" aria-live="off">
+      <p className="tnum font-display text-6xl md:text-7xl" aria-live="off">
         {formatDuration(ms)}
       </p>
       {label && <p className="mt-2 text-sm text-ink-3">{label}</p>}
@@ -298,7 +298,7 @@ function PbCalculator() {
           <p className="text-sm text-ink-3">{bn === 0 ? 'Baseline can’t be zero for a percentage.' : 'Enter both values.'}</p>
         ) : (
           <>
-            <p className={clsx('tnum text-4xl font-bold', pct > 0 ? 'text-success' : pct < 0 ? 'text-danger' : 'text-ink')}>
+            <p className={clsx('tnum font-display text-4xl', pct > 0 ? 'text-success' : pct < 0 ? 'text-danger' : 'text-ink')}>
               {pct > 0 ? '+' : ''}
               {pct.toFixed(1)}%
             </p>
@@ -352,7 +352,7 @@ function ArithmeticTest({ challenge }: { challenge: Challenge | null }) {
     return (
       <Card className="p-5 md:p-7">
         <p className="text-center text-sm font-medium text-ink-3">Result</p>
-        <p className="tnum mt-1 text-center text-5xl font-bold">{result.score}/30</p>
+        <p className="tnum font-display mt-1 text-center text-5xl">{result.score}/30</p>
         <p className="tnum mt-1 text-center text-sm text-ink-2">
           {Math.round((result.score / 30) * 100)}% accuracy · {formatDuration(result.seconds * 1000)}
           {result.score / 30 >= 0.9 ? <Badge tone="success" className="ml-2">Target met</Badge> : <Badge tone="warn" className="ml-2">Below 90%</Badge>}
@@ -404,7 +404,7 @@ function ArithmeticTest({ challenge }: { challenge: Challenge | null }) {
         <ElapsedSince start={startedAt} />
       </div>
       <form className="mt-6 text-center" onSubmit={(e) => { e.preventDefault(); next(); }}>
-        <p className="tnum text-5xl font-bold tracking-tight" aria-live="polite">{q.text}</p>
+        <p className="tnum font-display text-5xl" aria-live="polite">{q.text}</p>
         <Input ref={inputRef} autoFocus aria-label="Answer" inputMode="numeric" className="tnum mx-auto mt-6 h-14 max-w-[200px] text-center text-2xl" value={cur} onChange={(e) => setCur(e.target.value.replace(/[^0-9-]/g, ''))} />
         <div className="mt-4 flex justify-center gap-2">
           <Button type="submit" variant="primary">{i + 1 >= 30 ? 'Finish' : 'Next'}</Button>
@@ -493,7 +493,7 @@ function Sprint({ challenge }: { challenge: Challenge | null }) {
   if (phase === 'done')
     return (
       <Card className="p-5 md:p-7">
-        <p className="tnum text-center text-5xl font-bold">{correct}</p>
+        <p className="tnum font-display text-center text-5xl">{correct}</p>
         <p className="text-center text-sm text-ink-2">
           correct in 60 s · {correct + wrong.length} answered · {wrong.length} wrong
           {correct >= 25 ? <Badge tone="success" className="ml-2">Target met</Badge> : <Badge tone="warn" className="ml-2">Below 25</Badge>}
@@ -517,13 +517,13 @@ function Sprint({ challenge }: { challenge: Challenge | null }) {
     <Card className="p-5 md:p-7">
       <div className="flex items-center justify-between text-sm">
         <span className="tnum font-semibold text-success">{correct} correct</span>
-        <span className={clsx('tnum font-bold', left < 10_000 ? 'text-danger' : 'text-ink')}>{(left / 1000).toFixed(1)} s</span>
+        <span className={clsx('tnum font-semibold', left < 10_000 ? 'text-danger' : 'text-ink')}>{(left / 1000).toFixed(1)} s</span>
       </div>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3">
-        <div className="h-full bg-accent" style={{ width: `${(left / 60_000) * 100}%` }} />
+        <div className="h-full bg-slate" style={{ width: `${(left / 60_000) * 100}%` }} />
       </div>
       <form className="mt-8 text-center" onSubmit={(e) => { e.preventDefault(); answer(cur); }}>
-        <p className="tnum text-5xl font-bold">{q.text}</p>
+        <p className="tnum font-display text-5xl">{q.text}</p>
         <Input autoFocus aria-label="Answer" inputMode="numeric" className="tnum mx-auto mt-6 h-14 max-w-[200px] text-center text-2xl" value={cur} onChange={(e) => setCur(e.target.value.replace(/[^0-9-]/g, ''))} />
         <Button type="submit" className="mt-4" variant="primary">Submit</Button>
       </form>
@@ -573,7 +573,7 @@ function PiTest({ challenge }: { challenge: Challenge | null }) {
         </>
       ) : (
         <>
-          <p className="tnum text-center text-5xl font-bold">{result.streak}</p>
+          <p className="tnum font-display text-center text-5xl">{result.streak}</p>
           <p className="text-center text-sm text-ink-2">
             digits correct before the first error
             {result.streak >= 100 ? <Badge tone="success" className="ml-2">100 — target met</Badge> : null}
@@ -753,11 +753,11 @@ function LogicTimer({ challenge }: { challenge: Challenge | null }) {
     <Card className="p-5 md:p-7">
       <div className="flex justify-center gap-6 text-center">
         <div>
-          <p className="tnum text-3xl font-bold">{solved}/6</p>
+          <p className="tnum font-display text-3xl">{solved}/6</p>
           <p className="text-xs text-ink-3">solved</p>
         </div>
         <div>
-          <p className="tnum text-3xl font-bold">{total}</p>
+          <p className="tnum font-display text-3xl">{total}</p>
           <p className="text-xs text-ink-3">minutes total</p>
         </div>
       </div>

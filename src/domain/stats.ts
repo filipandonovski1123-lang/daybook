@@ -239,7 +239,7 @@ export function deriveAchievements(args: {
   if (dayNow >= 15) add('halfway', startOfDayEpoch(scheduledDateFor(args.startDate, 15), args.timezone), 'Program Day 15 reached');
   if (dayNow >= 30) add('final_day', startOfDayEpoch(scheduledDateFor(args.startDate, 30), args.timezone), 'Program Day 30 reached');
 
-  const firstReflection = [...args.reflections].filter((r) => r.improvement || r.proud || r.difficult || r.change || r.completedChallenge).sort((a, b) => a.date.localeCompare(b.date))[0];
+  const firstReflection = [...args.reflections].filter((r) => r.entry || r.takeaway || r.mood || r.improvement || r.proud || r.difficult || r.change || r.completedChallenge).sort((a, b) => a.date.localeCompare(b.date))[0];
   if (firstReflection) add('first_reflection', firstReflection.updatedAt, `Reflection on ${firstReflection.date}`);
 
   const weeks = weeklyStats(args.startDate, args.today, args.challenges, args.progress, args.habits, args.entries);
@@ -247,4 +247,21 @@ export function deriveAchievements(args: {
   if (good) add('week_consistent', startOfDayEpoch(addDays(good.to, 1), args.timezone), `${good.label}: ${pct(good.habitRate)} habit adherence`);
 
   return out.sort((a, b) => a.earnedAt - b.earnedAt);
+}
+
+/**
+ * Consecutive days (ending today, or yesterday if today has nothing logged yet) with at least one
+ * completed habit or a finished/attempted challenge. Informational only — nothing is reset or penalised.
+ */
+export function activeStreak(entries: readonly HabitEntry[], progress: readonly ChallengeProgress[], today: IsoDate): number {
+  const active = new Set<IsoDate>();
+  for (const e of entries) if (e.status === 'done' || e.status === 'partial') active.add(e.date);
+  for (const p of progress) if (p.completedOn) active.add(p.completedOn);
+  let d = active.has(today) ? today : addDays(today, -1);
+  let n = 0;
+  while (active.has(d)) {
+    n++;
+    d = addDays(d, -1);
+  }
+  return n;
 }

@@ -1,33 +1,37 @@
 import clsx from 'clsx';
-import { ChevronRight, Wrench } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, List } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Badge, Card, Difficulty, PageHeader, Segmented } from '../../components/ui';
-import { formatDate, weekdayOf } from '../../domain/dates';
-import { STATUS_LABEL } from '../../domain/schedule';
-import type { DisplayStatus } from '../../domain/types';
+import { quoteFor, QuoteCard } from '../../components/Scene';
+import { addDays, formatDate, parseIso, toIso, weekdayOf } from '../../domain/dates';
+import { programDayFor, PROGRAM_DAYS, STATUS_LABEL } from '../../domain/schedule';
+import type { DisplayStatus, IsoDate } from '../../domain/types';
 import { useApp } from '../../lib/appData';
 import { useProgramView } from '../../lib/selectors';
-import { EstTime, STATUS_ICON, StatusBadge } from './shared';
+import { StatusBadge } from './shared';
 
-const CELL_STYLE: Record<DisplayStatus, string> = {
-  upcoming: 'border-line bg-surface',
-  available: 'border-accent bg-accent-soft ring-1 ring-accent/40',
-  in_progress: 'border-info/60 bg-info-soft',
-  completed: 'border-success/50 bg-success-soft',
-  attempted: 'border-violet/50 bg-violet-soft',
-  missed: 'border-danger/40 bg-danger-soft',
-  rescheduled: 'border-warn/50 bg-warn-soft',
+/** Circle treatment per status — the calendar's whole visual language. */
+const CIRCLE: Record<DisplayStatus, string> = {
+  completed: 'bg-slate text-white dark:text-[#14181c]',
+  attempted: 'bg-slate-soft text-slate',
+  in_progress: 'bg-surface text-ink border-[1.5px] border-slate',
+  available: 'bg-surface text-ink border-[2.5px] border-slate',
+  upcoming: 'bg-surface-3 text-ink-2',
+  missed: 'bg-surface text-danger border border-danger/45',
+  rescheduled: 'bg-surface text-ink-2 border border-dashed border-line-strong',
 };
-const ICON_COLOR: Record<DisplayStatus, string> = {
-  upcoming: 'text-ink-3',
-  available: 'text-accent',
-  in_progress: 'text-info',
-  completed: 'text-success',
-  attempted: 'text-violet',
-  missed: 'text-danger',
-  rescheduled: 'text-warn',
-};
+
+const LEGEND_ORDER: DisplayStatus[] = ['completed', 'available', 'upcoming', 'in_progress', 'attempted', 'missed', 'rescheduled'];
+const LEGEND_LABEL: Partial<Record<DisplayStatus, string>> = { available: 'Today' };
+
+const monthKey = (d: IsoDate) => d.slice(0, 7);
+const firstOfMonth = (key: string): IsoDate => `${key}-01`;
+function shiftMonth(key: string, by: number): string {
+  const { year, month } = parseIso(firstOfMonth(key));
+  const m = month - 1 + by;
+  return toIso(year + Math.floor(m / 12), ((m % 12) + 12) % 12 + 1, 1).slice(0, 7);
+}
+const monthTitle = (key: string) => new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(Date.UTC(Number(key.slice(0, 4)), Number(key.slice(5, 7)) - 1, 1));
 
 export function ChallengesPage() {
   const view = useProgramView();
@@ -39,7 +43,14 @@ export function ChallengesPage() {
       return 'calendar';
     }
   });
-  const changeMode = (m: 'calendar' | 'list') => {
+  const firstMonth = view ? monthKey(view.startDate) : monthKey(today);
+  const lastMonth = view ? monthKey(view.endDate) : monthKey(today);
+  const initial = monthKey(today) < firstMonth ? firstMonth : monthKey(today) > lastMonth ? lastMonth : monthKey(today);
+  const [month, setMonth] = useState(initial);
+  if (!view) return null;
+
+  const toggle = () => {
+    const m = mode === 'calendar' ? 'list' : 'calendar';
     setMode(m);
     try {
       localStorage.setItem('challengesView', m);
@@ -47,113 +58,131 @@ export function ChallengesPage() {
       /* ignore */
     }
   };
-  if (!view) return null;
-  const leading = (weekdayOf(view.startDate) + 6) % 7; // Monday-first grid
+
+  const first = firstOfMonth(month);
+  const lead = (weekdayOf(first) + 6) % 7; // Monday-first
+  const { year, month: mm } = parseIso(first);
+  const daysInMonth = new Date(Date.UTC(year, mm, 0)).getUTCDate();
+  const byDate = new Map<IsoDate, (typeof data.challenges)[number]>();
+  for (const c of data.challenges) byDate.set(view.originalDateOf(c), c);
+  const present = new Set(view.statuses.values());
+  // Hide whole weeks before the program starts / after it ends (the month still reads correctly).
+  const cells = lead + daysInMonth;
+  const weekHasProgram = (w: number) => Array.from({ length: 7 }, (_, k) => w * 7 + k - lead).some((i) => i >= 0 && i < daysInMonth && byDate.has(addDays(first, i)));
+  const weeks = Math.ceil(cells / 7);
+  let firstWeek = 0;
+  while (firstWeek < weeks - 1 && !weekHasProgram(firstWeek)) firstWeek++;
+  let lastWeek = weeks - 1;
+  while (lastWeek > firstWeek && !weekHasProgram(lastWeek)) lastWeek--;
+  const skipDays = firstWeek * 7;
+  const trimDays = Math.max(0, cells - (lastWeek + 1) * 7);
 
   return (
     <div>
-      <PageHeader
-        title="Challenges"
-        subtitle={`${formatDate(view.startDate, 'dm')} – ${formatDate(view.endDate, 'dm')} · ${view.counts.completed} completed · ${view.counts.attempted} attempted · ${view.counts.missed} missed`}
-        action={
-          <Segmented
-            label="View"
-            value={mode}
-            onChange={changeMode}
-            size="sm"
-            options={[
-              { value: 'calendar', label: 'Calendar' },
-              { value: 'list', label: 'List' },
-            ]}
-          />
-        }
-      />
+      <h1 className="sr-only">Challenge calendar</h1>
+      <div className="mb-1 hidden items-center justify-between md:flex">
+        <p className="font-display text-[26px]">Challenge Calendar</p>
+      </div>
 
-      {mode === 'calendar' ? (
-        <>
-          <div className="mb-2 grid grid-cols-7 gap-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-ink-3" aria-hidden>
-            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-              <span key={d}>{d}</span>
-            ))}
+      <div className={clsx('md:rounded-xl md:border md:border-line md:bg-surface md:p-6')}>
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-[26px] md:text-[20px]">{mode === 'calendar' ? monthTitle(month) : 'All 30 challenges'}</h2>
+          <div className="flex items-center gap-1">
+            {mode === 'calendar' && (
+              <>
+                <button type="button" aria-label="Previous month" disabled={month <= firstMonth} onClick={() => setMonth(shiftMonth(month, -1))} className="rounded p-1.5 text-ink-2 hover:text-ink disabled:opacity-30">
+                  <ChevronLeft className="size-[18px]" strokeWidth={1.6} />
+                </button>
+                <button type="button" aria-label="Next month" disabled={month >= lastMonth} onClick={() => setMonth(shiftMonth(month, 1))} className="rounded p-1.5 text-ink-2 hover:text-ink disabled:opacity-30">
+                  <ChevronRight className="size-[18px]" strokeWidth={1.6} />
+                </button>
+              </>
+            )}
+            <button type="button" onClick={toggle} aria-label={mode === 'calendar' ? 'Show as list' : 'Show as calendar'} className="ml-1 rounded p-1.5 text-ink-2 hover:text-ink">
+              {mode === 'calendar' ? <List className="size-[18px]" strokeWidth={1.6} /> : <CalendarDays className="size-[18px]" strokeWidth={1.6} />}
+            </button>
           </div>
-          <ol className="grid grid-cols-7 gap-1.5" aria-label="30-day calendar">
-            {Array.from({ length: leading }, (_, i) => (
-              <li key={`pad-${i}`} aria-hidden />
-            ))}
-            {data.challenges.map((c) => {
-              const s = view.statuses.get(c.id) ?? 'upcoming';
-              const Icon = STATUS_ICON[s];
-              const date = view.originalDateOf(c);
-              const isToday = date === today;
-              return (
-                <li key={c.id}>
-                  <Link
-                    to={`/challenges/${c.id}`}
-                    aria-label={`Day ${c.day}, ${formatDate(date, 'short')}: ${c.title}. ${STATUS_LABEL[s]}`}
-                    className={clsx('group flex aspect-square min-h-[52px] flex-col justify-between rounded-[10px] border p-1.5 transition-transform hover:-translate-y-px sm:p-2', CELL_STYLE[s], isToday && 'outline outline-2 outline-offset-1 outline-accent')}
-                  >
-                    <span className="flex items-start justify-between">
-                      <span className="tnum text-[13px] font-bold leading-none sm:text-base">{c.day}</span>
-                      <Icon className={clsx('size-3 sm:size-3.5', ICON_COLOR[s])} aria-hidden />
-                    </span>
-                    <span className="hidden truncate text-[10px] font-medium leading-tight text-ink-2 sm:block">{c.category}</span>
-                    <span className="tnum text-[9.5px] leading-none text-ink-3 sm:text-[10px]">{formatDate(date, 'dm')}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
-          <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-ink-2" aria-label="Legend">
-            {(Object.keys(STATUS_LABEL) as DisplayStatus[]).map((s) => {
-              const Icon = STATUS_ICON[s];
-              return (
+        </div>
+        <p className="mt-1 text-[12.5px] text-ink-3">
+          {view.counts.completed} completed · {view.counts.attempted} attempted · {view.counts.missed} missed · {formatDate(view.startDate, 'dm')} – {formatDate(view.endDate, 'dm')}
+        </p>
+
+        {mode === 'calendar' ? (
+          <>
+            <div className="mt-6 grid grid-cols-7 text-center text-[11.5px] text-ink-3" aria-hidden>
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                <span key={d}>{d}</span>
+              ))}
+            </div>
+            <ol className="mt-3 grid grid-cols-7 gap-y-3" aria-label={`${monthTitle(month)} calendar`}>
+              {Array.from({ length: lead - skipDays }, (_, i) => (
+                <li key={`pad-${i}`} aria-hidden />
+              ))}
+              {Array.from({ length: daysInMonth }, (_, i) => i)
+                .filter((i) => i >= skipDays - lead && i < daysInMonth - trimDays)
+                .map((i) => {
+                const date = addDays(first, i);
+                const c = byDate.get(date);
+                const dom = i + 1;
+                if (!c)
+                  return (
+                    <li key={date} className="flex justify-center">
+                      <span className={clsx('flex size-10 items-center justify-center text-[13px] md:size-11', date === today ? 'font-semibold text-ink' : 'text-ink-3/60')}>{dom}</span>
+                    </li>
+                  );
+                const s = view.statuses.get(c.id) ?? 'upcoming';
+                const isTodayCell = date === today;
+                const cls = isTodayCell && s !== 'completed' && s !== 'attempted' ? CIRCLE.available : CIRCLE[s];
+                return (
+                  <li key={date} className="flex justify-center">
+                    <Link
+                      to={`/challenges/${c.id}`}
+                      aria-label={`${formatDate(date, 'short')}, Day ${c.day} of ${PROGRAM_DAYS}: ${c.title}. ${STATUS_LABEL[s]}`}
+                      className={clsx('tnum flex size-10 items-center justify-center rounded-full text-[13.5px] transition-transform hover:scale-105 md:size-11', cls)}
+                    >
+                      {dom}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[12px] text-ink-2" aria-label="Legend">
+              {LEGEND_ORDER.filter((s) => s === 'completed' || s === 'available' || s === 'upcoming' || present.has(s)).map((s) => (
                 <li key={s} className="flex items-center gap-1.5">
-                  <Icon className={clsx('size-3.5', ICON_COLOR[s])} aria-hidden />
-                  {STATUS_LABEL[s]}
+                  <span className={clsx('size-3.5 rounded-full', CIRCLE[s], s === 'available' && '!border-2')} aria-hidden />
+                  {LEGEND_LABEL[s] ?? STATUS_LABEL[s]}
                 </li>
-              );
-            })}
-          </ul>
-        </>
-      ) : (
-        <Card className="divide-y divide-line">
-          <ol>
+              ))}
+            </ul>
+            <p className="mt-3 text-[12px] text-ink-3">Tap a day for its challenge. Days outside the program are faded.</p>
+          </>
+        ) : (
+          <ol className="mt-4 divide-y divide-line border-t border-line">
             {data.challenges.map((c) => {
               const s = view.statuses.get(c.id) ?? 'upcoming';
               const date = view.dateOf(c);
-              const missing = c.equipment.filter((e) => !data.settings.equipment.includes(e)).length;
               const p = data.progress.get(c.id);
               return (
-                <li key={c.id} className="border-b border-line last:border-0">
-                  <Link to={`/challenges/${c.id}`} className={clsx('flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-2/60', date === today && 'bg-accent-soft/40')}>
-                    <div className="flex w-10 shrink-0 flex-col items-center">
-                      <span className="text-[9px] font-semibold uppercase text-ink-3">Day</span>
-                      <span className="tnum text-lg font-bold leading-none">{c.day}</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">{c.title}</p>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-3">
-                        <span>{c.category}</span>
-                        <span>{formatDate(date, 'short')}</span>
-                        {p?.rescheduledTo && <span className="text-warn">was {formatDate(view.originalDateOf(c), 'dm')}</span>}
-                        <EstTime minutes={c.estimatedMinutes} />
-                        <Difficulty value={c.difficulty} />
-                        {missing > 0 && (
-                          <Badge tone="warn" icon={<Wrench className="size-3" />}>
-                            {missing} needed
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
+                <li key={c.id}>
+                  <Link to={`/challenges/${c.id}`} className={clsx('flex items-center gap-3 py-3.5', date === today && 'bg-surface-2/60')}>
+                    <span className={clsx('tnum flex size-9 shrink-0 items-center justify-center rounded-full text-[12.5px]', CIRCLE[s])}>{c.day}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14.5px]">{c.title}</span>
+                      <span className="block text-[12px] text-ink-3">
+                        {c.category} · {formatDate(date, 'short')}
+                        {p?.rescheduledTo ? ` · was ${formatDate(view.originalDateOf(c), 'dm')}` : ''}
+                      </span>
+                    </span>
                     <StatusBadge status={s} />
-                    <ChevronRight className="size-4 shrink-0 text-ink-3" aria-hidden />
                   </Link>
                 </li>
               );
             })}
           </ol>
-        </Card>
-      )}
+        )}
+      </div>
+
+      <QuoteCard quote={quoteFor(programDayFor(view.startDate, today) + 1)} scene="ridge" className="mt-8" />
     </div>
   );
 }

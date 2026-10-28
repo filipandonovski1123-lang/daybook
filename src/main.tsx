@@ -2,11 +2,13 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { ensureSeeded } from './db/actions';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/newsreader/opsz.css';
 import './index.css';
 
 // Apply the last-used theme before first paint (the real setting lives in IndexedDB).
 try {
-  if (localStorage.getItem('theme') === 'light') document.documentElement.classList.remove('dark');
+  if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
 } catch {
   /* storage unavailable */
 }

@@ -8,16 +8,16 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
 type Size = 'sm' | 'md' | 'lg';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-accent text-accent-ink hover:bg-accent-strong shadow-card font-semibold',
-  secondary: 'bg-surface-2 text-ink border border-line hover:bg-surface-3 hover:border-line-strong',
+  primary: 'bg-accent text-accent-ink hover:bg-accent-strong font-medium',
+  secondary: 'bg-surface text-ink border border-line hover:bg-surface-2 hover:border-line-strong',
   ghost: 'text-ink-2 hover:text-ink hover:bg-surface-2',
   danger: 'bg-danger-soft text-danger hover:bg-danger hover:text-white border border-transparent',
-  success: 'bg-success text-[#04150d] hover:brightness-110 font-semibold',
+  success: 'bg-slate text-white hover:brightness-110 font-medium dark:text-[#14181c]',
 };
 const sizes: Record<Size, string> = {
-  sm: 'h-8 px-3 text-[13px] gap-1.5 rounded-lg',
-  md: 'h-10 px-4 text-sm gap-2 rounded-[10px]',
-  lg: 'h-12 px-5 text-[15px] gap-2 rounded-xl',
+  sm: 'h-8 px-3 text-[13px] gap-1.5 rounded-md',
+  md: 'h-10 px-4 text-sm gap-2 rounded-lg',
+  lg: 'h-12 px-5 text-[15px] gap-2 rounded-lg',
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -64,7 +64,7 @@ export function Card({ className, children, as: As = 'section', ...rest }: { cla
 export function SectionTitle({ children, action, id, className }: { children: ReactNode; action?: ReactNode; id?: string; className?: string }) {
   return (
     <div className={clsx('mb-2.5 flex items-center justify-between gap-3', className)}>
-      <h2 id={id} className="text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+      <h2 id={id} className="font-display text-[19px] leading-tight text-ink">
         {children}
       </h2>
       {action}
@@ -76,7 +76,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
   return (
     <header className="mb-5 flex items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight md:text-[32px]">{title}</h1>
+        <h1 className="font-display text-[32px] leading-[1.1] md:text-[38px]">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-ink-2">{subtitle}</p>}
       </div>
       {action}
@@ -110,7 +110,7 @@ export type Tone = keyof typeof tones;
 
 export function Badge({ tone = 'neutral', children, className, icon }: { tone?: Tone; children: ReactNode; className?: string; icon?: ReactNode }) {
   return (
-    <span className={clsx('inline-flex items-center gap-1 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[11.5px] font-semibold leading-4', tones[tone], className)}>
+    <span className={clsx('inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-medium leading-4', tones[tone], className)}>
       {icon}
       {children}
     </span>
@@ -136,7 +136,7 @@ export function Field({ label, hint, error, children, htmlFor, className }: { la
   );
 }
 
-const inputCls = 'w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-ink placeholder:text-ink-3 transition-colors hover:border-line-strong focus:border-accent focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:opacity-60';
+const inputCls = 'w-full rounded-lg border border-line bg-surface px-3 py-2 text-ink placeholder:text-ink-3 transition-colors hover:border-line-strong focus:border-slate focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:opacity-60';
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...rest }, ref) {
   return <input ref={ref} className={clsx(inputCls, 'h-10', className)} {...rest} />;
@@ -175,7 +175,7 @@ export function Switch({ checked, onChange, label, description, disabled, id }: 
         aria-checked={checked}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={clsx('relative mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full border transition-colors disabled:opacity-50', checked ? 'border-accent bg-accent' : 'border-line-strong bg-surface-3')}
+        className={clsx('relative mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full border transition-colors disabled:opacity-50', checked ? 'border-slate bg-slate' : 'border-line-strong bg-surface-3')}
       >
         <span className={clsx('inline-block size-[18px] rounded-full bg-white shadow transition-transform', checked ? 'translate-x-[19px]' : 'translate-x-[2px]')} />
       </button>
@@ -190,9 +190,10 @@ export function Checkbox({ checked, onChange, label, disabled, className, size =
       <span
         aria-hidden
         className={clsx(
-          'mt-px flex shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--ring)]',
+          'mt-px flex shrink-0 items-center justify-center border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--ring)]',
+          'rounded-full',
           size === 'lg' ? 'size-6' : 'size-5',
-          checked ? 'border-success bg-success text-[#04150d]' : 'border-line-strong bg-surface-2',
+          checked ? 'border-slate bg-slate text-white dark:text-[#14181c]' : 'border-line-strong bg-surface',
         )}
       >
         {checked && <Check className={clsx('animate-check', size === 'lg' ? 'size-4' : 'size-3.5')} strokeWidth={3} />}
@@ -233,7 +234,7 @@ export function RatingPicker({ value, onChange, label, low, high }: { value: num
             aria-checked={value === n}
             aria-label={`${n} of 5`}
             onClick={() => onChange(value === n ? null : n)}
-            className={clsx('h-9 flex-1 rounded-lg border text-sm font-semibold transition-colors', value === n ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface-2 text-ink-3 hover:text-ink')}
+            className={clsx('h-9 flex-1 rounded-lg border text-sm font-semibold transition-colors', value === n ? 'border-slate bg-slate-soft text-slate' : 'border-line bg-surface text-ink-3 hover:text-ink')}
           >
             {n}
           </button>
@@ -276,7 +277,7 @@ export function Dialog({ open, onClose, title, children, footer, size = 'md' }: 
       {open && (
         <div className="flex max-h-[90dvh] flex-col">
           <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
-            <h2 id={titleId} className="text-base font-semibold">
+            <h2 id={titleId} className="font-display text-xl">
               {title}
             </h2>
             <IconButton label="Close" onClick={onClose}>
@@ -345,7 +346,7 @@ export function ProgressRing({ value, size = 64, stroke = 6, children, tone = 'a
     <div className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }} role="img" aria-label={label}>
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-3)" strokeWidth={stroke} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={tone === 'success' ? 'var(--success)' : 'var(--accent)'} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - v)} style={{ transition: 'stroke-dashoffset 500ms cubic-bezier(.2,.8,.2,1)' }} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={tone === 'success' ? 'var(--success)' : 'var(--slate)'} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - v)} style={{ transition: 'stroke-dashoffset 500ms cubic-bezier(.2,.8,.2,1)' }} />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">{children}</div>
     </div>
@@ -356,7 +357,7 @@ export function ProgressBar({ value, tone = 'accent', className, label }: { valu
   const v = Math.max(0, Math.min(1, value));
   return (
     <div className={clsx('h-1.5 w-full overflow-hidden rounded-full bg-surface-3', className)} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(v * 100)}>
-      <div className={clsx('h-full rounded-full transition-[width] duration-500', tone === 'success' ? 'bg-success' : tone === 'info' ? 'bg-info' : 'bg-accent')} style={{ width: `${v * 100}%` }} />
+      <div className={clsx('h-full rounded-full transition-[width] duration-500', tone === 'success' ? 'bg-success' : tone === 'info' ? 'bg-info' : 'bg-slate')} style={{ width: `${v * 100}%` }} />
     </div>
   );
 }
@@ -365,7 +366,7 @@ export function Stat({ label, value, sub, tone }: { label: string; value: ReactN
   return (
     <div className="min-w-0">
       <p className="text-xs font-medium text-ink-3">{label}</p>
-      <p className={clsx('tnum mt-0.5 text-2xl font-bold tracking-tight', tone === 'success' && 'text-success', tone === 'danger' && 'text-danger', tone === 'accent' && 'text-accent')}>{value}</p>
+      <p className={clsx('tnum font-display mt-0.5 text-[28px] leading-tight', tone === 'success' && 'text-success', tone === 'danger' && 'text-danger', tone === 'accent' && 'text-accent')}>{value}</p>
       {sub && <p className="mt-0.5 text-xs text-ink-3">{sub}</p>}
     </div>
   );
@@ -375,7 +376,7 @@ export function Difficulty({ value }: { value: number }) {
   return (
     <span className="inline-flex items-center gap-0.5" role="img" aria-label={`Difficulty ${value} of 5`}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <span key={n} className={clsx('h-2.5 w-1.5 rounded-sm', n <= value ? 'bg-accent' : 'bg-surface-3')} />
+        <span key={n} className={clsx('h-2.5 w-1.5 rounded-sm', n <= value ? 'bg-slate' : 'bg-surface-3')} />
       ))}
     </span>
   );

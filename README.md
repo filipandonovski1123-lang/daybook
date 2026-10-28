@@ -29,6 +29,18 @@ The production build in `dist/` is a static site and an installable PWA. Host it
 
 Data is stored **per browser and per device**. The phone and the laptop don't sync, so pick one as your main device, or move data between them with Settings → Export / Import.
 
+## Photos
+
+The design uses three landscape images. Until you add your own, drawn misty landscapes are shown in their place. To use photos, put JPEGs in `public/images/` with these names, then rebuild:
+
+| File | Where it appears | Suggested size |
+|---|---|---|
+| `hero.jpg` | Today banner (lone figure on a misty coast works best) | ~1600×700 |
+| `quote-1.jpg` | Quote cards on Today and challenge pages (misty peaks) | ~800×800 |
+| `quote-2.jpg` | Quote card on the calendar (rocky ridge) | ~800×800 |
+
+Photos are shown slightly desaturated to match the palette.
+
 ## Notifications: what works, and when
 
 | Situation | Morning / evening / bedtime reminder |

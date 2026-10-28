@@ -12,7 +12,7 @@ import { useStatusOf } from '../../lib/selectors';
 
 export const STATUS_TONE: Record<DisplayStatus, Tone> = {
   upcoming: 'neutral',
-  available: 'accent',
+  available: 'neutral',
   in_progress: 'info',
   completed: 'success',
   attempted: 'violet',
@@ -65,35 +65,36 @@ export function ChallengeActions({ challenge, compact = false }: { challenge: Ch
   const paused = progress?.status === 'paused';
   const done = status === 'completed' || status === 'attempted';
 
+  const size = compact ? 'sm' : 'lg';
   return (
     <div className={clsx('flex flex-wrap gap-2', compact && 'gap-1.5')}>
       {!done && !running && (
-        <Button variant="primary" size={compact ? 'md' : 'lg'} icon={<Play className="size-4" />} busy={start.busy} onClick={() => (isFutureDue ? setConfirmEarly(true) : void start.run(false))}>
+        <Button variant="primary" size={size} icon={<Play className="size-4" />} busy={start.busy} onClick={() => (isFutureDue ? setConfirmEarly(true) : void start.run(false))}>
           {paused ? 'Resume' : isFutureDue ? 'Start early' : 'Start challenge'}
         </Button>
       )}
       {running && (
-        <Button size={compact ? 'md' : 'lg'} icon={<Pause className="size-4" />} busy={pause.busy} onClick={() => void pause.run()}>
+        <Button size={size} icon={<Pause className="size-4" />} busy={pause.busy} onClick={() => void pause.run()}>
           Pause
         </Button>
       )}
-      {!done && (progress?.startedAt || status === 'available' || status === 'missed') && (
-        <Button variant={running || paused ? 'success' : 'secondary'} size={compact ? 'md' : 'lg'} icon={<Check className="size-4" />} onClick={() => setCompleteOpen(true)}>
+      {!done && (progress?.startedAt || ((status === 'available' || status === 'missed') && !compact)) && (
+        <Button variant={running || paused ? 'success' : 'secondary'} size={size} icon={<Check className="size-4" />} onClick={() => setCompleteOpen(true)}>
           Finish…
         </Button>
       )}
-      {!done && (
-        <Button variant="ghost" size={compact ? 'md' : 'lg'} icon={<CalendarClock className="size-4" />} onClick={() => setRescheduleOpen(true)}>
+      {!done && !compact && (
+        <Button variant="ghost" size={size} icon={<CalendarClock className="size-4" />} onClick={() => setRescheduleOpen(true)}>
           {progress?.rescheduledTo ? 'Change date' : 'Reschedule'}
         </Button>
       )}
       {done && (
-        <Button variant="ghost" size={compact ? 'md' : 'lg'} icon={<Undo2 className="size-4" />} onClick={() => setConfirmUndo(true)}>
+        <Button variant="ghost" size={size} icon={<Undo2 className="size-4" />} onClick={() => setConfirmUndo(true)}>
           Undo {status === 'completed' ? 'completion' : 'attempt'}
         </Button>
       )}
       {status === 'attempted' && (
-        <Button size={compact ? 'md' : 'lg'} icon={<RotateCcw className="size-4" />} onClick={() => void start.run(true)}>
+        <Button size={size} icon={<RotateCcw className="size-4" />} onClick={() => void start.run(true)}>
           Try again
         </Button>
       )}
@@ -183,7 +184,7 @@ function CompleteDialog({ challenge, open, onClose, future }: { challenge: Chall
           <li key={criterion.id} className="flex items-start justify-between gap-3">
             {result.auto ? (
               <span className="flex items-start gap-3 text-sm">
-                <span className={clsx('mt-px flex size-5 shrink-0 items-center justify-center rounded-full border border-dashed', result.met ? 'border-success bg-success text-[#04150d]' : 'border-line-strong bg-surface-2')} aria-hidden>
+                <span className={clsx('mt-px flex size-5 shrink-0 items-center justify-center rounded-full border border-dashed', result.met ? 'border-slate bg-slate text-white dark:text-[#14181c]' : 'border-line-strong bg-surface-2')} aria-hidden>
                   {result.met && <Check className="size-3.5" strokeWidth={3} />}
                 </span>
                 <span>

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 /**
  * Chart conventions: one axis, thin bars with 4px rounded data-ends, recessive grid,
@@ -197,6 +197,41 @@ export function PbBars({ data }: { data: PbDatum[] }) {
             ))}
           </Bar>
         </BarChart>
+      </ResponsiveContainer>
+    </ChartFrame>
+  );
+}
+
+export interface SeriesPoint {
+  label: string;
+  value: number;
+}
+
+/** Single-series progress line (one personal-best metric over logged attempts). */
+export function ProgressLine({ data, unit, label }: { data: SeriesPoint[]; unit?: string; label: string }) {
+  return (
+    <ChartFrame height={170} table={{ head: ['Attempt', label], rows: data.map((d) => [d.label, `${d.value}${unit ? ` ${unit}` : ''}`]) }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+          <defs>
+            <linearGradient id="pl-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="var(--chart-single)" stopOpacity={0.22} />
+              <stop offset="1" stopColor="var(--chart-single)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
+          <XAxis dataKey="label" {...axis} interval="preserveStartEnd" minTickGap={12} />
+          <YAxis {...axis} allowDecimals={false} />
+          <Tooltip
+            cursor={{ stroke: 'var(--border-strong)' }}
+            content={({ active, payload }) => {
+              const d = payload?.[0]?.payload as SeriesPoint | undefined;
+              if (!active || !d) return null;
+              return <TooltipBox title={d.label} rows={[{ label, value: `${d.value}${unit ? ` ${unit}` : ''}`, color: 'var(--chart-single)' }]} />;
+            }}
+          />
+          <Area type="monotone" dataKey="value" stroke="var(--chart-single)" strokeWidth={2} fill="url(#pl-fill)" dot={{ r: 3, fill: 'var(--chart-single)', stroke: 'var(--surface)', strokeWidth: 2 }} isAnimationActive={false} />
+        </AreaChart>
       </ResponsiveContainer>
     </ChartFrame>
   );

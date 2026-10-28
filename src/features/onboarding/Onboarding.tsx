@@ -46,14 +46,14 @@ export function Onboarding() {
     <div className="min-h-dvh px-4 py-8 md:py-14">
       <div className="mx-auto w-full max-w-xl">
         <div className="mb-6 flex items-center gap-3">
-          <Logo size={36} />
+          <Logo />
           <div className="flex-1">
             <p className="text-xs font-medium text-ink-3">
               Setup · Step {step + 1} of {STEPS.length}
             </p>
             <div className="mt-1.5 flex gap-1" aria-hidden>
               {STEPS.map((s, i) => (
-                <span key={s} className={clsx('h-1 flex-1 rounded-full transition-colors', i <= step ? 'bg-accent' : 'bg-surface-3')} />
+                <span key={s} className={clsx('h-1 flex-1 rounded-full transition-colors', i <= step ? 'bg-slate' : 'bg-surface-3')} />
               ))}
             </div>
           </div>
@@ -203,8 +203,8 @@ export function Onboarding() {
 function StepBody({ icon, title, lead, children }: { icon: ReactNode; title: string; lead: string; children: ReactNode }) {
   return (
     <div>
-      <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent [&>svg]:size-5">{icon}</div>
-      <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+      <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-surface-2 text-slate [&>svg]:size-5">{icon}</div>
+      <h1 className="font-display text-[30px] leading-tight">{title}</h1>
       <p className="mb-6 mt-1.5 text-sm leading-relaxed text-ink-2">{lead}</p>
       {children}
     </div>
@@ -213,9 +213,9 @@ function StepBody({ icon, title, lead, children }: { icon: ReactNode; title: str
 
 function ModeCard({ selected, onSelect, title, body, badge }: { selected: boolean; onSelect: () => void; title: string; body: string; badge?: string }) {
   return (
-    <button type="button" role="radio" aria-checked={selected} aria-label={`${title}: ${body}`} onClick={onSelect} className={clsx('rounded-xl border p-4 text-left transition-colors', selected ? 'border-accent bg-accent-soft' : 'border-line bg-surface-2 hover:border-line-strong')}>
+    <button type="button" role="radio" aria-checked={selected} aria-label={`${title}: ${body}`} onClick={onSelect} className={clsx('rounded-xl border p-4 text-left transition-colors', selected ? 'border-slate bg-slate-soft' : 'border-line bg-surface-2 hover:border-line-strong')}>
       <div className="flex items-center gap-2">
-        <span className={clsx('flex size-4 items-center justify-center rounded-full border', selected ? 'border-accent' : 'border-line-strong')}>{selected && <span className="size-2 rounded-full bg-accent" />}</span>
+        <span className={clsx('flex size-4 items-center justify-center rounded-full border', selected ? 'border-slate' : 'border-line-strong')}>{selected && <span className="size-2 rounded-full bg-accent" />}</span>
         <span className="font-semibold">{title}</span>
         {badge && <Badge tone="accent">{badge}</Badge>}
       </div>

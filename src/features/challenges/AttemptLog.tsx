@@ -43,9 +43,9 @@ export function AttemptLog({ challenge }: { challenge: Challenge }) {
             return (
               <div key={s.key} className="rounded-xl border border-line bg-surface-2 px-3.5 py-3">
                 <p className="flex items-center gap-1.5 text-xs font-medium text-ink-3">
-                  <Trophy className="size-3.5 text-accent" aria-hidden /> {s.label} · {s.better === 'higher' ? 'higher is better' : 'lower is better'}
+                  <Trophy className="size-3.5 text-slate" aria-hidden /> {s.label} · {s.better === 'higher' ? 'higher is better' : 'lower is better'}
                 </p>
-                <p className="tnum mt-1 text-xl font-bold">
+                <p className="tnum font-display mt-1 text-2xl">
                   {s.best ?? '—'}
                   {s.best !== null && s.unit && <span className="text-sm font-medium text-ink-3"> {s.unit}</span>}
                 </p>

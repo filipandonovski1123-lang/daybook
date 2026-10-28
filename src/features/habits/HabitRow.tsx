@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Check, ChevronDown, Circle, CircleHelp, Lock, Minus, Moon, Timer } from 'lucide-react';
+import { Check, Circle, CircleHelp, Lock, Minus, Moon, Timer } from 'lucide-react';
 import { useId, useState } from 'react';
 import { Link } from 'react-router';
 import { Badge, Button, Field, Input, Textarea } from '../../components/ui';
@@ -10,11 +10,11 @@ import type { Habit, HabitEntry, HabitEntryStatus, IsoDate } from '../../domain/
 import { useAction, useApp } from '../../lib/appData';
 
 const STATUS_STYLE: Record<HabitEntryStatus, string> = {
-  done: 'border-success bg-success text-[#04150d]',
-  partial: 'border-accent bg-accent-soft text-accent',
-  missed: 'border-line-strong bg-surface-3 text-ink-3',
-  skipped: 'border-line-strong bg-surface-3 text-ink-3',
-  rest: 'border-info bg-info-soft text-info',
+  done: 'border-slate bg-slate text-white dark:text-[#14181c]',
+  partial: 'border-slate bg-slate-soft text-slate',
+  missed: 'border-line-strong bg-surface-2 text-ink-3',
+  skipped: 'border-line-strong bg-surface-2 text-ink-3',
+  rest: 'border-slate/50 bg-surface text-slate',
 };
 
 export function habitTargetLabel(h: Habit): string {
@@ -63,7 +63,7 @@ function entrySummary(h: Habit, e: HabitEntry | undefined): string | null {
  * One habit for one date. The circle is a one-tap action where it makes sense (tick, done target,
  * yes); everything else opens the inline editor. Never more than one tap away from logging.
  */
-export function HabitRow({ habit, date, unplanned = false }: { habit: Habit; date: IsoDate; unplanned?: boolean }) {
+export function HabitRow({ habit, date, unplanned = false, readOnly = false }: { habit: Habit; date: IsoDate; unplanned?: boolean; readOnly?: boolean }) {
   const { data } = useApp();
   const entry = data.entries.find((e) => e.id === entryId(habit.id, date));
   const [open, setOpen] = useState(false);
@@ -90,33 +90,32 @@ export function HabitRow({ habit, date, unplanned = false }: { habit: Habit; dat
   const status = entry?.status;
 
   return (
-    <li className={clsx('group rounded-xl transition-colors', open && 'bg-surface-2/70')}>
-      <div className="flex items-center gap-3 px-2 py-2">
+    <li className="group">
+      <div className="flex min-h-[46px] items-center gap-3 py-1.5">
         <button
           type="button"
           onClick={() => (q ? void log.run(q) : setOpen(true))}
           aria-label={q ? `${status === 'done' ? 'Undo' : 'Complete'} ${name}` : `Log ${name}`}
           aria-pressed={q ? status === 'done' : undefined}
-          disabled={log.busy}
-          className={clsx('flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors', status ? STATUS_STYLE[status] : 'border-line-strong text-transparent hover:border-success hover:text-success/60')}
+          disabled={log.busy || readOnly}
+          className={clsx('relative flex size-[22px] shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors before:absolute before:-inset-2.5 before:content-[""] disabled:opacity-60', status ? STATUS_STYLE[status] : 'border-line-strong text-transparent hover:border-slate hover:text-slate/50')}
         >
-          {status === 'done' && <Check className="animate-check size-4" strokeWidth={3} />}
-          {status === 'partial' && <Minus className="size-4" strokeWidth={3} />}
-          {status === 'rest' && <Moon className="size-3.5" />}
-          {(status === 'missed' || status === 'skipped') && <Circle className="size-2.5" fill="currentColor" />}
-          {!status && <Check className="size-4" strokeWidth={3} />}
+          {status === 'done' && <Check className="animate-check size-3" strokeWidth={3} />}
+          {status === 'partial' && <Minus className="size-3" strokeWidth={3} />}
+          {status === 'rest' && <Moon className="size-3" />}
+          {(status === 'missed' || status === 'skipped') && <Circle className="size-1.5" fill="currentColor" />}
+          {!status && <Check className="size-3" strokeWidth={3} />}
         </button>
-        <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls={editorId}>
-          <span className="flex items-center gap-2">
-            <span className={clsx('truncate text-[15px] font-medium', status === 'done' && 'text-ink-2')}>{name}</span>
-            {habit.sensitive && <Lock className="size-3.5 shrink-0 text-violet" aria-label="Private" />}
+        <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:cursor-default" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls={editorId} disabled={readOnly}>
+          <span className="flex min-w-0 flex-1 items-center gap-2">
+            <span className={clsx('truncate text-[14px]', status === 'done' && 'text-ink-2')}>{name}</span>
+            {habit.sensitive && <Lock className="size-3 shrink-0 text-ink-3" aria-label="Private" />}
             {unplanned && <Badge>Extra</Badge>}
           </span>
-          <span className="block truncate text-xs text-ink-3">{summary ?? (habitTargetLabel(habit) || (habit.input === 'text' ? 'Write what you did' : habit.input === 'yesno' ? 'Yes or not today' : 'Tap to log'))}</span>
+          <span className="max-w-[48%] shrink-0 truncate text-right text-[12px] text-ink-3">{summary ?? (habitTargetLabel(habit) || (habit.input === 'text' ? 'Add note' : habit.input === 'yesno' ? 'Yes / no' : 'Log'))}</span>
         </button>
-        <ChevronDown className={clsx('size-4 shrink-0 text-ink-3 transition-transform', open && 'rotate-180')} aria-hidden onClick={() => setOpen(!open)} />
       </div>
-      <div id={editorId} hidden={!open} className="px-2 pb-3 pl-[52px]">
+      <div id={editorId} hidden={!open} className="pb-3 pl-[34px]">
         {open && <HabitEditor habit={habit} entry={entry} busy={log.busy} onSave={async (input) => void (await log.run(input))} date={date} />}
       </div>
     </li>
@@ -197,7 +196,7 @@ function HabitEditor({ habit, entry, onSave, busy, date }: { habit: Habit; entry
             </Field>
           )}
           {habit.id === 'focus' && (
-            <Link to="/tools/focus" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline">
+            <Link to="/tools/focus" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-slate hover:underline">
               <Timer className="size-4" /> Open focus timer
             </Link>
           )}

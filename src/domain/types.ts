@@ -335,6 +335,9 @@ export const reflectionSchema = z.object({
   id: isoDate,
   date: isoDate,
   completedChallenge: z.enum(['yes', 'partly', 'no', 'rest']).nullable(),
+  /** Free-form journal entry ("How was your day?"). Defaults keep older backups importable. */
+  entry: z.string().max(500).default(''),
+  takeaway: z.string().max(300).default(''),
   improvement: z.string().max(2000),
   difficult: z.string().max(2000),
   proud: z.string().max(2000),
