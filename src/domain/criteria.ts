@@ -1,3 +1,4 @@
+import { challengeKey } from '../data/library';
 import { withDerived } from './derived';
 import { improvementPct, num } from './math';
 import type { Attempt, Challenge, ChallengeProgress, Criterion, EvidenceMeta, MetricsRecord, PbKey, Rule } from './types';
@@ -55,8 +56,8 @@ export interface CompletionCheck {
   results: { criterion: Criterion; result: CriterionResult }[];
 }
 
-export function checkCompletion(challenge: Pick<Challenge, 'id' | 'criteria'>, progress: Pick<ChallengeProgress, 'metrics' | 'checked'>, evidence: readonly EvidenceMeta[]): CompletionCheck {
-  const p = { checked: progress.checked, metrics: withDerived(challenge.id, progress.metrics) };
+export function checkCompletion(challenge: Pick<Challenge, 'day' | 'libraryId' | 'criteria'>, progress: Pick<ChallengeProgress, 'metrics' | 'checked'>, evidence: readonly EvidenceMeta[]): CompletionCheck {
+  const p = { checked: progress.checked, metrics: withDerived(challengeKey(challenge), progress.metrics) };
   const results = challenge.criteria.map((criterion) => ({ criterion, result: evaluateCriterion(criterion, p, evidence) }));
   const main = results.filter((r) => !r.criterion.bonus);
   const bonus = results.filter((r) => r.criterion.bonus);
@@ -96,10 +97,10 @@ export interface PbSummary {
  * A personal best is a logged value that beats a previously logged value for the same metric,
  * or a final measurement that beats its baseline. The very first value is a starting point, not a PB.
  */
-export function personalBests(challenge: Pick<Challenge, 'id' | 'pbKeys'>, progress: Pick<ChallengeProgress, 'metrics' | 'updatedAt'> | null, attempts: readonly Attempt[]): { events: PbEvent[]; summaries: PbSummary[] } {
+export function personalBests(challenge: Pick<Challenge, 'id' | 'day' | 'libraryId' | 'pbKeys'>, progress: Pick<ChallengeProgress, 'metrics' | 'updatedAt'> | null, attempts: readonly Attempt[]): { events: PbEvent[]; summaries: PbSummary[] } {
   const events: PbEvent[] = [];
   const summaries: PbSummary[] = [];
-  const pm = progress ? withDerived(challenge.id, progress.metrics) : {};
+  const pm = progress ? withDerived(challengeKey(challenge), progress.metrics) : {};
   const sorted = [...attempts].filter((a) => a.challengeId === challenge.id).sort((a, b) => a.at - b.at);
   for (const k of challenge.pbKeys) {
     const isBetter = (x: number, y: number) => (k.better === 'higher' ? x > y : x < y);

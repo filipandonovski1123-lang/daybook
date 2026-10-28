@@ -30,7 +30,7 @@ const utc = (ms: number) => new Date(ms).toISOString().replace(/[-:]/g, '').repl
  */
 export function buildIcs(args: { startDate: IsoDate; timezone: string; challenges: readonly Challenge[]; reminders: readonly Reminder[]; now?: number }): string {
   const stamp = utc(args.now ?? Date.now());
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//30-Day Challenge//Reminders//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:30-Day Challenge'];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Day Challenge//Reminders//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:${args.challenges.length}-Day Challenge`];
   const sorted = [...args.challenges].sort((a, b) => a.day - b.day);
   for (const c of sorted) {
     const date = scheduledDateFor(args.startDate, c.day);
@@ -38,7 +38,7 @@ export function buildIcs(args: { startDate: IsoDate; timezone: string; challenge
       if (!r.enabled) continue;
       const start = zonedToEpoch(date, r.time, args.timezone);
       const summary =
-        r.type === 'morning' ? `Day ${c.day}/30: ${c.title}` : r.type === 'evening' ? `Day ${c.day}/30 check-in` : 'Bedtime routine';
+        r.type === 'morning' ? `Day ${c.day}/${sorted.length}: ${c.title}` : r.type === 'evening' ? `Day ${c.day}/${sorted.length} check-in` : 'Bedtime routine';
       const desc =
         r.type === 'morning' ? `Today's challenge: ${c.title}. Goal: ${c.objective}` : r.type === 'evening' ? 'Review your challenge, habits and progress.' : 'Start winding down. Screens away soon.';
       lines.push(

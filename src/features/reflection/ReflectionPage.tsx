@@ -5,7 +5,7 @@ import { Link, useSearchParams } from 'react-router';
 import { Disclosure, Field, Input, RatingPicker, Segmented, Textarea } from '../../components/ui';
 import { blankReflection, saveReflection } from '../../db/actions';
 import { formatDate, isValidIso } from '../../domain/dates';
-import { PROGRAM_DAYS, programDayFor } from '../../domain/schedule';
+import { programDayFor } from '../../domain/schedule';
 import type { IsoDate, Reflection } from '../../domain/types';
 import { useAction, useApp } from '../../lib/appData';
 
@@ -61,7 +61,7 @@ function ReflectionForm({ date }: { date: IsoDate }) {
   return (
     <div className="mx-auto max-w-xl">
       <p className="eyebrow">
-        {day >= 1 && day <= PROGRAM_DAYS ? `Day ${day} · ` : ''}Evening reflection{date !== today ? ` · ${formatDate(date, 'short')}` : ''}
+        {day >= 1 && day <= (data.program?.length ?? 30) ? `Day ${day} · ` : ''}Evening reflection{date !== today ? ` · ${formatDate(date, 'short')}` : ''}
       </p>
       <h1 className="font-display mt-3 text-[34px] leading-[1.08] md:text-[40px]">How was your day?</h1>
       <p className="mt-3 text-[14px] leading-relaxed text-ink-2">Take a moment to reflect. Progress isn’t just about what you do, but how you feel.</p>

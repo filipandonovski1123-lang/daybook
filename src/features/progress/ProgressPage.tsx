@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router';
 import { Badge, Card, EmptyState, PageHeader, ProgressBar, SectionTitle, Stat } from '../../components/ui';
 import { formatDate, formatInstant } from '../../domain/dates';
-import { PROGRAM_DAYS, STATUS_LABEL } from '../../domain/schedule';
+import { STATUS_LABEL } from '../../domain/schedule';
 import { ACHIEVEMENTS, allPbEvents, categoryBreakdown, elapsedProgramDates, habitSeries, mostSkipped, pct, suggestions, weeklyStats } from '../../domain/stats';
 import type { AchievementType } from '../../domain/types';
 import { useApp } from '../../lib/appData';
@@ -27,7 +27,7 @@ export default function ProgressPage() {
   const view = useProgramView();
   const stats = useMemo(() => {
     if (!view) return null;
-    const dates = elapsedProgramDates(view.startDate, today);
+    const dates = elapsedProgramDates(view.startDate, today, view.length);
     const series = habitSeries(data.habits, data.entries, dates);
     const weeks = weeklyStats(view.startDate, today, data.challenges, data.progress, data.habits, data.entries);
     const pbs = allPbEvents(data.challenges, data.progress, data.attempts);
@@ -74,10 +74,10 @@ export default function ProgressPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Progress" subtitle={view.phase === 'before' ? `Starts ${formatDate(view.startDate, 'short')} — charts fill in as you log real data.` : `Day ${view.day} of ${PROGRAM_DAYS} · every number below comes from what you logged.`} />
+      <PageHeader title="Progress" subtitle={view.phase === 'before' ? `Starts ${formatDate(view.startDate, 'short')} — charts fill in as you log real data.` : `Day ${view.day} of ${view.length} · every number below comes from what you logged.`} />
 
       <Card className="grid grid-cols-2 gap-x-4 gap-y-5 p-5 sm:grid-cols-4">
-        <Stat label="Current day" value={view.phase === 'before' ? '—' : view.day} sub={view.phase === 'active' ? `${PROGRAM_DAYS - view.day} to go` : view.phase === 'after' ? 'Finished' : 'Not started'} />
+        <Stat label="Current day" value={view.phase === 'before' ? '—' : view.day} sub={view.phase === 'active' ? `${view.length - view.day} to go` : view.phase === 'after' ? 'Finished' : 'Not started'} />
         <Stat label="Completed" value={view.counts.completed} sub={`${view.counts.attempted} attempted`} tone="success" />
         <Stat label="Remaining" value={view.counts.remaining} sub={view.counts.missed ? `${view.counts.missed} missed` : 'none missed'} tone={view.counts.missed ? 'danger' : undefined} />
         <Stat label="Habit adherence" value={pct(stats.habitRate)} sub={`${stats.pbs.length} PBs · ${stats.sessions} sessions`} />

@@ -7,7 +7,7 @@ import { Button, Disclosure, ProgressRing } from '../../components/ui';
 import { addDays, endOfDayEpoch, formatDate, nowTimeIn } from '../../domain/dates';
 import { dayAdherence } from '../../domain/habits';
 import { challengeNudge } from '../../domain/messages';
-import { PROGRAM_DAYS, programDayFor } from '../../domain/schedule';
+import { programDayFor } from '../../domain/schedule';
 import { activeStreak } from '../../domain/stats';
 import type { Challenge, IsoDate } from '../../domain/types';
 import { useApp, useNow } from '../../lib/appData';
@@ -34,14 +34,14 @@ export function TodayPage() {
   const slide = dir ? (dir === 'next' ? 'animate-slide-next' : 'animate-slide-prev') : '';
   const isToday = date === today;
   const day = programDayFor(view.startDate, date);
-  const inProgram = day >= 1 && day <= PROGRAM_DAYS;
+  const inProgram = day >= 1 && day <= view.length;
   const challenge = inProgram ? (data.challenges.find((c) => c.day === day) ?? null) : null;
   const hard = data.settings.hardMode;
   const minDate = addDays(view.startDate, -7);
   const maxDate = addDays(view.endDate, 1) > addDays(today, 1) ? addDays(view.endDate, 1) : addDays(today, 1);
   const name = data.settings.displayName;
   const greeting = greetingFor(nowTimeIn(data.settings.timezone));
-  const eyebrow = inProgram ? `Day ${day} of ${PROGRAM_DAYS}` : day < 1 ? `Starts ${formatDate(view.startDate, 'short')}` : 'Program complete';
+  const eyebrow = inProgram ? `Day ${day} of ${view.length}` : day < 1 ? `Starts ${formatDate(view.startDate, 'short')}` : 'Program complete';
 
   return (
     <div>
@@ -53,7 +53,7 @@ export function TodayPage() {
         </p>
         {view.phase === 'active' && (
           <p className="font-display text-[17px]">
-            Day {view.day} <span className="text-[13px] text-ink-3">of {PROGRAM_DAYS}</span>
+            Day {view.day} <span className="text-[13px] text-ink-3">of {view.length}</span>
           </p>
         )}
       </div>
@@ -168,9 +168,9 @@ function Headline({ view, challenge, day, isToday }: { view: ProgramView; challe
     }
     return (
       <div className="mt-3">
-        <h1 className="font-display text-[34px] leading-[1.08] md:text-[44px]">{view.counts.completed} of 30 completed.</h1>
+        <h1 className="font-display text-[34px] leading-[1.08] md:text-[44px]">{view.counts.completed} of {view.length} completed.</h1>
         <p className="mt-3 max-w-md text-[14px] leading-relaxed text-ink-2">
-          The 30 days are over{view.counts.attempted ? `, with ${view.counts.attempted} more honestly attempted` : ''}. Open challenges can still be finished — they’ll be recorded with their real dates.{' '}
+          The {view.length} days are over{view.counts.attempted ? `, with ${view.counts.attempted} more honestly attempted` : ''}. Open challenges can still be finished — they’ll be recorded with their real dates.{' '}
           <Link to="/progress" className="text-slate underline-offset-2 hover:underline">
             Review your progress
           </Link>
@@ -342,7 +342,7 @@ function ProgressSummary({ date, challenge, className }: { date: IsoDate; challe
   const done = adherence.done + (challengeDone ? 1 : 0);
   const pct = total ? Math.round((done / total) * 100) : 0;
   const streak = activeStreak(data.entries, [...data.progress.values()], today);
-  const overall = Math.round(((view?.counts.completed ?? 0) / PROGRAM_DAYS) * 100);
+  const overall = Math.round(((view?.counts.completed ?? 0) / (view?.length || 1)) * 100);
   return (
     <section aria-label="Your progress" className={clsx('rounded-xl border border-line bg-surface p-4 shadow-card md:p-5', className)}>
       <h2 className="font-display mb-4 hidden text-[19px] md:block">Your Progress</h2>

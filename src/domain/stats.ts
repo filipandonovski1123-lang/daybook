@@ -1,7 +1,7 @@
 import { personalBests, type PbEvent } from './criteria';
 import { addDays, diffDays, startOfDayEpoch } from './dates';
 import { dayAdherence, displayName, isPlannedOn, type DayAdherence } from './habits';
-import { displayStatus, PROGRAM_DAYS, programDayFor, scheduledDateFor } from './schedule';
+import { DEFAULT_PROGRAM_DAYS, displayStatus, programDayFor, scheduledDateFor } from './schedule';
 import type { Achievement, AchievementType, Attempt, Challenge, ChallengeProgress, DisplayStatus, Habit, HabitEntry, IsoDate, Reflection } from './types';
 
 export type ProgressMap = ReadonlyMap<string, ChallengeProgress>;
@@ -36,9 +36,9 @@ export function challengeCounts(statuses: ReadonlyMap<string, DisplayStatus>): C
   return c;
 }
 
-/** Program dates from Day 1 up to and including `today` (capped at Day 30). */
-export function elapsedProgramDates(startDate: IsoDate, today: IsoDate): IsoDate[] {
-  const days = Math.min(PROGRAM_DAYS, programDayFor(startDate, today));
+/** Program dates from Day 1 up to and including `today` (capped at the last day). */
+export function elapsedProgramDates(startDate: IsoDate, today: IsoDate, length: number = DEFAULT_PROGRAM_DAYS): IsoDate[] {
+  const days = Math.min(length, programDayFor(startDate, today));
   return Array.from({ length: Math.max(0, days) }, (_, i) => addDays(startDate, i));
 }
 
@@ -60,12 +60,13 @@ export interface WeekStats {
   complete: boolean;
 }
 
-/** Program weeks: days 1–7, 8–14, 15–21, 22–28, 29–30. Only elapsed days count. */
+/** Program weeks: days 1–7, 8–14, … up to the program length (one challenge per day). Only elapsed days count. */
 export function weeklyStats(startDate: IsoDate, today: IsoDate, challenges: readonly Challenge[], progress: ProgressMap, habits: readonly Habit[], entries: readonly HabitEntry[]): WeekStats[] {
   const out: WeekStats[] = [];
-  for (let w = 0; w * 7 < PROGRAM_DAYS; w++) {
+  const length = challenges.length || DEFAULT_PROGRAM_DAYS;
+  for (let w = 0; w * 7 < length; w++) {
     const firstDay = w * 7 + 1;
-    const lastDay = Math.min(PROGRAM_DAYS, firstDay + 6);
+    const lastDay = Math.min(length, firstDay + 6);
     const from = scheduledDateFor(startDate, firstDay);
     const to = scheduledDateFor(startDate, lastDay);
     if (from > today) break;
@@ -194,9 +195,9 @@ export const ACHIEVEMENTS: Record<AchievementType, { title: string; description:
   seven_attempted: { title: 'Seven Challenges Attempted', description: 'Seven challenges completed or honestly attempted.' },
   first_pb: { title: 'First Personal Best', description: 'Beat a previously logged measurement.' },
   ten_completed: { title: 'Ten Challenges Completed', description: 'Ten challenges with their criteria met.' },
-  halfway: { title: 'Halfway Through', description: 'Reached Day 15 of the program.' },
-  final_day: { title: 'Final Day Reached', description: 'Reached Day 30 of the program.' },
-  all_completed: { title: 'All 30 Challenges Completed', description: 'Every challenge completed.' },
+  halfway: { title: 'Halfway Through', description: 'Reached the halfway day of the program.' },
+  final_day: { title: 'Final Day Reached', description: 'Reached the last day of the program.' },
+  all_completed: { title: 'Every Challenge Completed', description: 'Every challenge in the program completed.' },
   first_reflection: { title: 'First Reflection', description: 'Completed an evening check-in.' },
   week_consistent: { title: 'Consistent Week', description: 'A full program week with at least 80% habit adherence.' },
 };
@@ -228,7 +229,8 @@ export function deriveAchievements(args: {
   if (completed[0]) add('first_completed', completed[0].completedAt ?? 0, label(completed[0]));
   if (finished[6]) add('seven_attempted', finished[6].completedAt ?? 0, label(finished[6]));
   if (completed[9]) add('ten_completed', completed[9].completedAt ?? 0, label(completed[9]));
-  if (completed.length === PROGRAM_DAYS && args.challenges.length === PROGRAM_DAYS) {
+  const length = args.challenges.length || DEFAULT_PROGRAM_DAYS;
+  if (completed.length === length) {
     const last = completed[completed.length - 1];
     if (last) add('all_completed', last.completedAt ?? 0, label(last));
   }
@@ -236,8 +238,9 @@ export function deriveAchievements(args: {
   if (pbs[0]) add('first_pb', pbs[0].at, `${byId.get(pbs[0].challengeId)?.title ?? ''}: ${pbs[0].label} ${pbs[0].previous} → ${pbs[0].value}`);
 
   const dayNow = programDayFor(args.startDate, args.today);
-  if (dayNow >= 15) add('halfway', startOfDayEpoch(scheduledDateFor(args.startDate, 15), args.timezone), 'Program Day 15 reached');
-  if (dayNow >= 30) add('final_day', startOfDayEpoch(scheduledDateFor(args.startDate, 30), args.timezone), 'Program Day 30 reached');
+  const half = Math.ceil(length / 2);
+  if (dayNow >= half) add('halfway', startOfDayEpoch(scheduledDateFor(args.startDate, half), args.timezone), `Program Day ${half} reached`);
+  if (dayNow >= length) add('final_day', startOfDayEpoch(scheduledDateFor(args.startDate, length), args.timezone), `Program Day ${length} reached`);
 
   const firstReflection = [...args.reflections].filter((r) => r.entry || r.takeaway || r.mood || r.improvement || r.proud || r.difficult || r.change || r.completedChallenge).sort((a, b) => a.date.localeCompare(b.date))[0];
   if (firstReflection) add('first_reflection', firstReflection.updatedAt, `Reflection on ${firstReflection.date}`);

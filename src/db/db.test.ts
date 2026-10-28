@@ -3,6 +3,7 @@ import { todayIn, addDays } from '../domain/dates';
 import * as A from './actions';
 import { deleteAllData, exportData, importData, parseBackup } from './backup';
 import { db } from './db';
+import { SIGNATURE_PLAN } from '../data/library';
 
 const TZ = 'Australia/Sydney';
 
@@ -28,6 +29,9 @@ async function freshProgram(startOffset: number) {
     equipment: ['balls'],
     constraints: '',
     hardMode: false,
+    plan: [...SIGNATURE_PLAN],
+    mode: 'signature',
+    themes: [],
   });
   return { today: t, start };
 }
@@ -254,6 +258,71 @@ describe('v2 migration (general-purpose content)', () => {
     expect(qb?.name).toBe('Skill practice');
     expect((await db2.settings.get('settings'))?.equipment).toEqual(['throwing', 'chess']);
     db2.close();
+    await Dexie.delete(name);
+  });
+});
+
+describe('plans', () => {
+  it('builds a custom-length plan, swaps a day, and refuses rebuilds after activity', async () => {
+    const { generatePlan } = await import('../domain/planner');
+    const { LIBRARY } = await import('../data/library');
+    await freshProgram(0);
+    const plan = generatePlan(LIBRARY, { length: 10, themes: ['mind'], equipment: [], seed: 3 });
+    await A.replacePlan(plan, { mode: 'auto', themes: ['mind'] });
+    const p = await db.program.get('program');
+    expect(p?.length).toBe(10);
+    expect(p?.endDate).toBe(addDays(p!.startDate, 9));
+    expect(await db.challenges.count()).toBe(10);
+    expect((await db.challenges.get('day-01'))?.libraryId).toBe(plan[0]);
+
+    // Swap day 5 for something not in the plan.
+    const spare = LIBRARY.find((i) => !plan.includes(i.id))!;
+    await A.swapDay(5, spare.id);
+    expect((await db.challenges.get('day-05'))?.libraryId).toBe(spare.id);
+    expect(await db.revisions.where('challengeId').equals('day-05').count()).toBe(1);
+    // Duplicates are refused.
+    await expect(A.swapDay(6, spare.id)).rejects.toThrow(/already on Day 5/);
+
+    // Once something is logged: that day is locked and the plan can't be rebuilt.
+    await A.startChallenge('day-01');
+    expect(await A.canSwapDay(1)).toBe(false);
+    await expect(A.swapDay(1, LIBRARY.find((i) => !plan.includes(i.id) && i.id !== spare.id)!.id)).rejects.toThrow(/progress/);
+    await expect(A.replacePlan(plan, { mode: 'auto', themes: [] })).rejects.toThrow(/already logged/);
+  });
+
+  it('rejects invalid plans', async () => {
+    await freshProgram(0);
+    await expect(A.replacePlan(['juggling', 'origami'], { mode: 'auto', themes: [] })).rejects.toThrow(/3–100/);
+    await expect(A.replacePlan(['juggling', 'juggling', 'origami'], { mode: 'auto', themes: [] })).rejects.toThrow(/once/);
+    await expect(A.replacePlan(['juggling', 'nope', 'origami'], { mode: 'auto', themes: [] })).rejects.toThrow(/available/);
+  });
+});
+
+describe('v3 migration (program length and library links)', () => {
+  it('gives existing programs a 30-day length and links challenges to the library', async () => {
+    const { default: Dexie } = await import('dexie');
+    const { ChallengeDB } = await import('./db');
+    const { buildChallenges } = await import('../data/challenges');
+    const name = 'migration-v3';
+    await Dexie.delete(name);
+    const v2 = new Dexie(name);
+    const stores = {
+      settings: 'id', program: 'id', challenges: 'id, day', revisions: 'id, challengeId, at', progress: 'id, challengeId, status',
+      attempts: 'id, challengeId, date, at', evidence: 'id, challengeId, createdAt', evidenceFiles: 'id', habits: 'id, order',
+      habitEntries: 'id, habitId, date', reflections: 'id, date', reminders: 'id', achievements: 'id', notificationLog: 'id, date', timers: 'id',
+    };
+    v2.version(1).stores(stores);
+    v2.version(2).stores({});
+    await v2.table('program').add({ id: 'program', name: '30-Day Challenge', startDate: '2026-11-01', endDate: '2026-11-30', startedAt: null, history: [] });
+    await v2.table('challenges').bulkAdd(buildChallenges(0).map(({ libraryId: _l, ...c }) => c));
+    v2.close();
+    const db3 = new ChallengeDB(name);
+    await db3.open();
+    const p = await db3.program.get('program');
+    expect(p?.length).toBe(30);
+    expect(p?.mode).toBe('signature');
+    expect((await db3.challenges.get('day-02'))?.libraryId).toBe('speed-reading');
+    db3.close();
     await Dexie.delete(name);
   });
 });

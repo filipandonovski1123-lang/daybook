@@ -24,7 +24,7 @@ describe('app', () => {
   it('onboards with a future start date and shows the countdown, then logs a habit that persists', async () => {
     const user = userEvent.setup();
     render(<App />);
-    await screen.findByText('Thirty days. Thirty new skills.');
+    await screen.findByText('One new skill a day.');
     await user.type(screen.getByLabelText(/What should we call you/), 'Sam');
     await user.click(screen.getByRole('button', { name: 'Continue' }));
 
@@ -33,15 +33,25 @@ describe('app', () => {
     await user.click(screen.getByRole('button', { name: 'Tomorrow' }));
     const tomorrow = addDays(todayIn('Australia/Sydney'), 1);
     expect(screen.getByLabelText('Start date')).toHaveValue(tomorrow);
-    expect(screen.getByText(/Day 30:/)).toBeInTheDocument();
+    expect(screen.getByText(/Day 1:/)).toBeInTheDocument();
 
-    for (let i = 0; i < 5; i++) await user.click(screen.getByRole('button', { name: 'Continue' }));
+    // Equipment → Challenges (a generated plan is ready) → Rhythm → Habits → Reminders → Mode
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByRole('heading', { name: 'Your plan' })).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: /^Signature 30/ }));
+    expect(screen.getAllByRole('button', { name: /^Swap day/ })).toHaveLength(30);
+    await user.click(screen.getByRole('radio', { name: '14' }));
+    expect(screen.getAllByRole('button', { name: /^Swap day/ })).toHaveLength(14);
+    for (let i = 0; i < 4; i++) await user.click(screen.getByRole('button', { name: 'Continue' }));
     await user.click(screen.getByRole('radio', { name: /^Hard Mode/ }));
     await user.click(screen.getByRole('button', { name: 'Start my program' }));
 
     await screen.findByText(/starts in 1 day/);
     expect((await db.program.get('program'))?.startDate).toBe(tomorrow);
     expect((await db.settings.get('settings'))?.hardMode).toBe(true);
+    expect((await db.program.get('program'))?.length).toBe(14);
+    expect(await db.challenges.count()).toBe(14);
     // Hard Mode bar only appears once the program is active.
     expect(screen.queryByText(/left today/)).not.toBeInTheDocument();
 
@@ -53,7 +63,7 @@ describe('app', () => {
   });
 
   it('keeps the private habit discreet and lets it be hidden from Today', async () => {
-    await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), startedAt: null, history: [] });
+    await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), length: 30, mode: 'signature', themes: [], startedAt: null, history: [] });
     await updateSettings({ onboarded: true });
     render(<App />);
     await screen.findByRole('heading', { name: 'Learn to Juggle Three Balls', level: 1 });
@@ -65,7 +75,7 @@ describe('app', () => {
   });
 
   it('every navigation item is a reachable link', async () => {
-    await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), startedAt: null, history: [] });
+    await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), length: 30, mode: 'signature', themes: [], startedAt: null, history: [] });
     await updateSettings({ onboarded: true });
     render(<App />);
     await screen.findByRole('heading', { name: 'Learn to Juggle Three Balls', level: 1 });

@@ -1,8 +1,9 @@
-import type { Challenge, Criterion, MetricField, PbKey, ToolId } from '../domain/types';
+import type { Challenge, ChallengeTheme, Criterion, MetricField, PbKey, ToolId } from '../domain/types';
 
 /**
- * Canonical seed for the 30 challenges. This is the ONLY place challenge definitions live;
- * the database is seeded from it once and the user's edits are stored in the database afterwards.
+ * The "Signature 30": the hand-built 30-day program, ordered easiest to hardest. These are also
+ * part of the wider challenge library (see library.ts). Seeds are copied into the database when a
+ * plan is created; the user's edits then live in the database.
  */
 
 export const EQUIPMENT: Record<string, string> = {
@@ -26,9 +27,33 @@ export const EQUIPMENT: Record<string, string> = {
   chess: 'Online chess account',
   megaminx: 'Megaminx puzzle',
   recorder: 'Phone for audio/video recording',
+  cube: 'A 3×3 puzzle cube',
+  jumpRope: 'Jump rope',
+  bicycle: 'Bicycle + helmet',
+  sewing: 'Needle, thread and spare fabric',
+  seeds: 'Seeds, soil and a pot',
+  paints: 'Watercolour paints, brush and paper',
 };
 
-type Seed = Omit<Challenge, 'id' | 'updatedAt' | 'evidence' | 'stretchGoal' | 'safety' | 'tools' | 'pbKeys' | 'metrics' | 'criteria' | 'bonus' | 'equipment'> & {
+/** A reusable challenge definition. A plan places library items on days 1…N. */
+export type LibraryItem = Omit<Challenge, 'id' | 'day' | 'updatedAt' | 'libraryId'> & { id: string; theme: ChallengeTheme };
+
+/** Stable keys for the Signature 30, in day order. Challenge-specific logic (derived values, tools) keys off these. */
+export const SIGNATURE_KEYS = [
+  'juggling', 'speed-reading', 'sign-language', 'memory-palace', 'card-memory', 'realistic-drawing', 'boomerang', 'table-tennis',
+  'skateboarding', 'mental-arithmetic', 'piano-piece', 'restaurant-dish', 'throwing-accuracy', 'guitar-song', 'origami', 'pi-digits',
+  'data-analysis', 'football-touches', 'photography', 'perspective-drawing', 'logic-problems', 'mechanical-grabber', '3d-model',
+  'debate', 'persuasive-speaking', 'maths-sprint', 'photo-expedition', 'chess-competitor', 'skill-sprint', 'megaminx',
+] as const;
+
+const THEME_FOR_CATEGORY: Record<string, ChallengeTheme> = {
+  Coordination: 'body', Reading: 'mind', Communication: 'social', Memory: 'mind', Art: 'creative', Sport: 'body', Balance: 'body',
+  Mathematics: 'mind', Music: 'creative', Cooking: 'practical', Precision: 'creative', 'Data Analysis': 'practical', Soccer: 'body',
+  Photography: 'creative', 'Technical Art': 'creative', Logic: 'mind', Engineering: 'practical', '3D Design': 'creative',
+  Debate: 'social', 'Public Speaking': 'social', 'Mental Speed': 'mind', Chess: 'mind', 'Personal Best': 'practical', 'Puzzle Mastery': 'mind',
+};
+
+type Seed = Omit<Challenge, 'id' | 'libraryId' | 'updatedAt' | 'evidence' | 'stretchGoal' | 'safety' | 'tools' | 'pbKeys' | 'metrics' | 'criteria' | 'bonus' | 'equipment'> & {
   bonus?: string;
   equipment?: string[];
   safety?: string[];
@@ -635,10 +660,12 @@ const SEEDS: Seed[] = [
   },
 ];
 
-export function buildChallenges(now: number = Date.now()): Challenge[] {
-  return SEEDS.map((s) => ({
-    ...s,
-    id: `day-${String(s.day).padStart(2, '0')}`,
+function seedToItem(s: Seed, key: string): LibraryItem {
+  const { day: _day, ...rest } = s;
+  return {
+    ...rest,
+    id: key,
+    theme: THEME_FOR_CATEGORY[s.category] ?? 'mind',
     bonus: s.bonus ?? null,
     equipment: s.equipment ?? [],
     safety: s.safety ?? [],
@@ -648,8 +675,22 @@ export function buildChallenges(now: number = Date.now()): Challenge[] {
     criteria: s.criteria ?? [],
     stretchGoal: s.stretchGoal ?? null,
     evidence: { enabled: true, accept: 'image/*', label: 'Evidence', ...s.evidence },
-    updatedAt: now,
-  }));
+  };
+}
+
+export const SIGNATURE_ITEMS: LibraryItem[] = SEEDS.map((s, i) => seedToItem(s, SIGNATURE_KEYS[i] ?? `signature-${i + 1}`));
+
+export const dayId = (day: number) => `day-${String(day).padStart(2, '0')}`;
+
+/** Place a library item on a program day. */
+export function instantiate(item: LibraryItem, day: number, now: number = Date.now()): Challenge {
+  const { id, theme: _theme, ...rest } = item;
+  return { ...structuredClone(rest), id: dayId(day), day, libraryId: id, updatedAt: now };
+}
+
+/** The Signature 30 as a ready-made plan (also the default seed before onboarding). */
+export function buildChallenges(now: number = Date.now()): Challenge[] {
+  return SIGNATURE_ITEMS.map((item, i) => instantiate(item, i + 1, now));
 }
 
 export const CHALLENGE_COUNT = SEEDS.length;

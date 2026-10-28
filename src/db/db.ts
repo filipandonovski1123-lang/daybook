@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import { buildChallenges } from '../data/challenges';
+import { buildChallenges, SIGNATURE_KEYS } from '../data/challenges';
 import { buildHabits } from '../data/habits';
 import type {
   Achievement,
@@ -20,7 +20,7 @@ import type {
 } from '../domain/types';
 
 /** Bump with a new `this.version(n)` block (and an `.upgrade()` if data needs reshaping). */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export class ChallengeDB extends Dexie {
   settings!: EntityTable<Settings, 'id'>;
@@ -85,6 +85,20 @@ export class ChallengeDB extends Dexie {
         if (settings?.equipment.includes('football')) {
           await tx.table('settings').put({ ...settings, equipment: settings.equipment.map((e) => (e === 'football' ? 'throwing' : e)) });
         }
+      });
+    // v3: configurable program length and plans built from the challenge library.
+    // Existing programs were always the 30-day Signature plan.
+    this.version(3)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table('program').toCollection().modify((p: Partial<Program>) => {
+          p.length ??= 30;
+          p.mode ??= 'signature';
+          p.themes ??= [];
+        });
+        await tx.table('challenges').toCollection().modify((c: Partial<Challenge>) => {
+          if (c.libraryId === undefined) c.libraryId = c.day ? (SIGNATURE_KEYS[c.day - 1] ?? null) : null;
+        });
       });
   }
 }

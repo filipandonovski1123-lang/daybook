@@ -1,8 +1,16 @@
-# 30-Day Challenge
+# Day Challenge
 
-A private, offline-first personal growth tracker: 30 unique daily challenges, a rotating habit system, personal bests, progress analytics, reminders and an optional Hard Mode accountability system.
+A private, offline-first personal growth tracker: one new challenge a day for a length you choose, a rotating habit system, personal bests, progress analytics, reminders and an optional Hard Mode accountability system.
 
 No account, no server, no analytics. Everything is stored in your browser on your device.
+
+## Challenges and plans
+
+- **Library:** about 160 one-day challenges across six interests (mind, body, creative, social, practical, wellbeing), each rated difficulty 1–5. Source: `src/data/challenges.ts` (the Signature 30) and `src/data/libraryExtra.ts`.
+- **Length:** 3–100 days (presets 7 / 14 / 21 / 30 / 60 / 90).
+- **Choose for me:** `src/domain/planner.ts` builds a plan that ramps from difficulty 1 to 5, prefers the chosen interests and owned equipment, avoids repeating a category on consecutive days, and is sorted so no day is easier than the one before. Shuffle picks a new set.
+- **Signature 30:** the original hand-built 30-day program.
+- **Swapping:** any day can be swapped for another library challenge until something is logged against it. The whole plan, including its length, can be rebuilt until anything at all is logged.
 
 ## Run it
 

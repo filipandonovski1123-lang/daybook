@@ -1,5 +1,5 @@
 import { addDays, inWindow, nowTimeIn, todayIn, zonedToEpoch } from './dates';
-import { PROGRAM_DAYS, programDayFor } from './schedule';
+import { programDayFor } from './schedule';
 import type { IsoDate, Reminder, ReminderType, Settings } from './types';
 
 /** A reminder that comes due while the app is closed is still shown if the app opens within this window. */
@@ -69,6 +69,8 @@ export function upcomingSchedule(reminders: readonly Reminder[], settings: Pick<
 
 export interface ReminderContext {
   startDate: IsoDate | null;
+  /** Program length in days. */
+  length: number;
   date: IsoDate;
   challengeTitle: string | null;
   hardMode: boolean;
@@ -84,14 +86,14 @@ export function reminderMessage(type: ReminderType, ctx: ReminderContext): { tit
   if (type === 'morning') {
     if (day === null || day < 1) {
       const inDays = day === null ? null : 1 - day;
-      return { title: '30-Day Challenge', body: inDays ? `Your challenge starts in ${inDays} day${inDays > 1 ? 's' : ''}. Check your preparation list.` : 'Open your plan for today.' };
+      return { title: 'Your challenge', body: inDays ? `Your challenge starts in ${inDays} day${inDays > 1 ? 's' : ''}. Check your preparation list.` : 'Open your plan for today.' };
     }
-    if (day > PROGRAM_DAYS) return { title: '30-Day Challenge', body: 'The program is finished. Open the app to review your progress.' };
+    if (day > ctx.length) return { title: 'Your challenge', body: 'The program is finished. Open the app to review your progress.' };
     return {
-      title: `Day ${day}/${PROGRAM_DAYS}`,
+      title: `Day ${day}/${ctx.length}`,
       body: ctx.hardMode
-        ? `Day ${day}/${PROGRAM_DAYS}. ${ctx.challengeTitle ? `Today: ${ctx.challengeTitle}. ` : ''}Plan it now, then go do it.`
-        : `Day ${day}/${PROGRAM_DAYS} is ready. Today's challenge: ${ctx.challengeTitle ?? 'see app'}. Open your checklist and plan your day.`,
+        ? `Day ${day}/${ctx.length}. ${ctx.challengeTitle ? `Today: ${ctx.challengeTitle}. ` : ''}Plan it now, then go do it.`
+        : `Day ${day}/${ctx.length} is ready. Today's challenge: ${ctx.challengeTitle ?? 'see app'}. Open your checklist and plan your day.`,
     };
   }
   if (type === 'evening') {

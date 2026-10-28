@@ -11,6 +11,7 @@ import { entryId } from '../../domain/habits';
 import type { Challenge, MetricValue, ToolId } from '../../domain/types';
 import { useAction, useApp } from '../../lib/appData';
 import { useToast } from '../../lib/toast';
+import { challengeKey } from '../../data/library';
 import { TOOL_META } from '../challenges/ChallengeDetailPage';
 import { usePersistentTimer } from './timer';
 
@@ -55,12 +56,12 @@ export default function ToolsPage() {
       {t === 'stopwatch' && <Stopwatch challenge={challenge} />}
       {t === 'countdown' && <Countdown />}
       {t === 'pbCalc' && <PbCalculator />}
-      {t === 'arithmetic30' && <ArithmeticTest challenge={challenge ?? data.challenges.find((c) => c.id === 'day-10') ?? null} />}
-      {t === 'arithmetic60' && <Sprint challenge={challenge ?? data.challenges.find((c) => c.id === 'day-26') ?? null} />}
-      {t === 'pi' && <PiTest challenge={challenge ?? data.challenges.find((c) => c.id === 'day-16') ?? null} />}
-      {t === 'readingTest' && <ReadingTimer challenge={challenge ?? data.challenges.find((c) => c.id === 'day-02') ?? null} />}
-      {t === 'solveTimer' && <SolveTimer challenge={challenge ?? data.challenges.find((c) => c.id === 'day-30') ?? null} />}
-      {t === 'logicTimer' && <LogicTimer challenge={challenge ?? data.challenges.find((c) => c.id === 'day-21') ?? null} />}
+      {t === 'arithmetic30' && <ArithmeticTest challenge={challenge ?? data.challenges.find((c) => challengeKey(c) === 'mental-arithmetic') ?? null} />}
+      {t === 'arithmetic60' && <Sprint challenge={challenge ?? data.challenges.find((c) => challengeKey(c) === 'maths-sprint') ?? null} />}
+      {t === 'pi' && <PiTest challenge={challenge ?? data.challenges.find((c) => challengeKey(c) === 'pi-digits') ?? null} />}
+      {t === 'readingTest' && <ReadingTimer challenge={challenge ?? data.challenges.find((c) => challengeKey(c) === 'speed-reading') ?? null} />}
+      {t === 'solveTimer' && <SolveTimer challenge={challenge ?? data.challenges.find((c) => challengeKey(c) === 'megaminx') ?? null} />}
+      {t === 'logicTimer' && <LogicTimer challenge={challenge ?? data.challenges.find((c) => challengeKey(c) === 'logic-problems') ?? null} />}
     </div>
   );
 }

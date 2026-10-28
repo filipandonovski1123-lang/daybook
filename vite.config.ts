@@ -33,9 +33,9 @@ export default defineConfig({
       injectManifest: { globPatterns: ['**/*.{js,css,html,svg,png,jpg,webmanifest,woff2}'] },
       devOptions: { enabled: false },
       manifest: {
-        name: '30-Day Challenge',
-        short_name: '30 Days',
-        description: 'Private 30-day challenge, habit and progress tracker.',
+        name: 'Day Challenge',
+        short_name: 'Day Challenge',
+        description: 'A private daily-challenge, habit and progress tracker. One new skill a day.',
         theme_color: '#f2f0eb',
         background_color: '#f3efec',
         display: 'standalone',

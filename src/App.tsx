@@ -6,6 +6,7 @@ import { ChallengesPage } from './features/challenges/ChallengesPage';
 import { HabitsPage } from './features/habits/HabitsPage';
 import { MorePage } from './features/more/MorePage';
 import { Onboarding } from './features/onboarding/Onboarding';
+import { PlanPage } from './features/plan/PlanPage';
 import { ReflectionPage } from './features/reflection/ReflectionPage';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { TodayPage } from './features/today/TodayPage';
@@ -42,6 +43,7 @@ function Ready() {
               <Route path="/challenge" element={<CurrentChallengeRedirect />} />
               <Route path="/reflection" element={<ReflectionPage />} />
               <Route path="/more" element={<MorePage />} />
+              <Route path="/plan" element={<PlanPage />} />
               <Route path="/challenges/:id" element={<ChallengeDetailPage />} />
               <Route path="/habits" element={<HabitsPage />} />
               <Route path="/progress" element={<ProgressPage />} />

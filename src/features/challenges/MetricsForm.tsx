@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { Field, Input, Select, Switch, Textarea } from '../../components/ui';
 import { setMetric } from '../../db/actions';
+import { challengeKey } from '../../data/library';
 import { derivedValues } from '../../domain/derived';
 import type { Challenge, MetricField, MetricValue } from '../../domain/types';
 import { useAction, useApp } from '../../lib/appData';
@@ -9,7 +10,7 @@ import { useAction, useApp } from '../../lib/appData';
 export function MetricsForm({ challenge }: { challenge: Challenge }) {
   const { data } = useApp();
   const metrics = data.progress.get(challenge.id)?.metrics ?? {};
-  const derived = derivedValues(challenge.id, metrics);
+  const derived = derivedValues(challengeKey(challenge), metrics);
   const groups = new Map<string, MetricField[]>();
   for (const f of challenge.metrics) {
     // Derived numbers (e.g. WPM computed from words + seconds) are shown read-only instead of as inputs.

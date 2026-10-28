@@ -1,5 +1,6 @@
 import { Bell, BellOff, CalendarPlus, Download, HardDrive, Send, ShieldAlert, Trash2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Link } from 'react-router';
 import { Badge, Button, Card, Checkbox, ConfirmDialog, Dialog, Field, Input, PageHeader, Segmented, Select, Switch } from '../../components/ui';
 import { EQUIPMENT } from '../../data/challenges';
 import { changeStartDate, programHasStarted, updateReminder, updateSettings } from '../../db/actions';
@@ -105,7 +106,7 @@ function ProgramSection() {
   const p = data.program;
   const [date, setDate] = useState(p?.startDate ?? today);
   const [confirm, setConfirm] = useState(false);
-  const change = useAction((confirmed: boolean) => changeStartDate(date, { confirmed }), { success: `Program now runs ${formatDate(date, 'dm')} – ${formatDate(endDateFor(date), 'dm')}.` });
+  const change = useAction((confirmed: boolean) => changeStartDate(date, { confirmed }), { success: `Program now runs ${formatDate(date, 'dm')} – ${formatDate(endDateFor(date, p?.length), 'dm')}.` });
   const [synced, setSynced] = useState(p?.startDate);
   if (synced !== p?.startDate) {
     setSynced(p?.startDate);
@@ -114,7 +115,10 @@ function ProgramSection() {
   if (!p) return null;
   const valid = isValidIso(date);
   return (
-    <Section title="Program dates" description={`Day 1 is ${formatDate(p.startDate)}; Day 30 is ${formatDate(p.endDate)}.`}>
+    <Section title="Program" description={`${p.length} days. Day 1 is ${formatDate(p.startDate)}; Day ${p.length} is ${formatDate(p.endDate)}.`}>
+      <Link to="/plan" className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate hover:underline">
+        Edit your plan and challenges →
+      </Link>
       <div className="flex flex-wrap items-end gap-2">
         <Field label="Start date" htmlFor="st-start" className="w-48">
           <Input id="st-start" type="date" value={date} onChange={(e) => setDate(e.target.value)} />

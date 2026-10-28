@@ -178,8 +178,8 @@ describe('criteria & personal bests', () => {
 
   it('day 2 speed reading needs +15% AND ≥80% comprehension, computing WPM', () => {
     const m = { baseWords: 1000, baseSeconds: 240, finalWords: 1000, finalSeconds: 200, finalComp: 85 }; // 250 → 300 wpm (+20%)
-    expect(withDerived('day-02', m).baseWpm).toBe(250);
-    expect(withDerived('day-02', m).finalWpm).toBe(300);
+    expect(withDerived('speed-reading', m).baseWpm).toBe(250);
+    expect(withDerived('speed-reading', m).finalWpm).toBe(300);
     expect(checkCompletion(byDay(2), { metrics: m, checked: [] }, []).mainMet).toBe(true);
     expect(checkCompletion(byDay(2), { metrics: { ...m, finalComp: 70 }, checked: [] }, []).mainMet).toBe(false);
     expect(checkCompletion(byDay(2), { metrics: { ...m, finalSeconds: 230 }, checked: [] }, []).mainMet).toBe(false);
@@ -193,11 +193,11 @@ describe('criteria & personal bests', () => {
   });
 
   it('day 28 chess derives games and rating change against the user’s own target', () => {
-    const m = withDerived('day-28', { startRating: 1200, endRating: 1235, wins: 4, draws: 1, losses: 3, analysed: 8 });
+    const m = withDerived('chess-competitor', { startRating: 1200, endRating: 1235, wins: 4, draws: 1, losses: 3, analysed: 8 });
     expect(m.gamesPlayed).toBe(8);
     expect(m.ratingChange).toBe(35);
     expect(m.reachedTarget).toBeUndefined(); // no target set
-    expect(withDerived('day-28', { endRating: 1235, targetRating: 1200 }).reachedTarget).toBe(true);
+    expect(withDerived('chess-competitor', { endRating: 1235, targetRating: 1200 }).reachedTarget).toBe(true);
     expect(checkCompletion(byDay(28), { metrics: { wins: 4, draws: 1, losses: 3, analysed: 8 }, checked: [] }, []).mainMet).toBe(true);
   });
 
@@ -351,9 +351,9 @@ describe('reminders', () => {
   });
 
   it('never includes habit names', () => {
-    const m = reminderMessage('morning', { startDate: '2026-11-20', date: '2026-11-27', challengeTitle: 'Learn to Play Table Tennis Competitively', hardMode: false, openItems: 0 });
+    const m = reminderMessage('morning', { startDate: '2026-11-20', length: 30, date: '2026-11-27', challengeTitle: 'Learn to Play Table Tennis Competitively', hardMode: false, openItems: 0 });
     expect(m.body).toBe("Day 8/30 is ready. Today's challenge: Learn to Play Table Tennis Competitively. Open your checklist and plan your day.");
-    const e = reminderMessage('evening', { startDate: '2026-11-20', date: '2026-11-27', challengeTitle: null, hardMode: true, openItems: 3 });
+    const e = reminderMessage('evening', { startDate: '2026-11-20', length: 30, date: '2026-11-27', challengeTitle: null, hardMode: true, openItems: 3 });
     expect(e.body).not.toMatch(/personal|habit goal/i);
   });
 });

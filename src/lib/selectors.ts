@@ -1,18 +1,20 @@
 import { useMemo } from 'react';
 import { addDays } from '../domain/dates';
 import { displayName, isPlannedOn } from '../domain/habits';
-import { displayStatus, effectiveDate, PROGRAM_DAYS, programDayFor, programPhase, scheduledDateFor, type ProgramPhase } from '../domain/schedule';
+import { displayStatus, effectiveDate, programDayFor, programPhase, scheduledDateFor, type ProgramPhase } from '../domain/schedule';
 import { challengeCounts, statusesFor, type ChallengeCounts } from '../domain/stats';
 import type { Challenge, DisplayStatus, Habit, IsoDate } from '../domain/types';
 import { useApp } from './appData';
 
 export interface ProgramView {
+  /** Number of days in the program. */
+  length: number;
   startDate: IsoDate;
   endDate: IsoDate;
   phase: ProgramPhase;
   /** Raw program day for today (may be <1 or >30). */
   dayRaw: number;
-  /** Clamped 1–30 for display. */
+  /** Clamped 1–length for display. */
   day: number;
   statuses: Map<string, DisplayStatus>;
   counts: ChallengeCounts;
@@ -33,20 +35,22 @@ export function useProgramView(): ProgramView | null {
     const p = data.program;
     if (!p) return null;
     const start = p.startDate;
+    const length = p.length;
     const statuses = statusesFor(start, today, data.challenges, data.progress);
     const dayRaw = programDayFor(start, today);
     const byDay = (d: number) => data.challenges.find((c) => c.day === d) ?? null;
-    const todayChallenge = dayRaw >= 1 && dayRaw <= PROGRAM_DAYS ? byDay(dayRaw) : null;
-    const tomorrowChallenge = dayRaw + 1 >= 1 && dayRaw + 1 <= PROGRAM_DAYS ? byDay(dayRaw + 1) : null;
+    const todayChallenge = dayRaw >= 1 && dayRaw <= length ? byDay(dayRaw) : null;
+    const tomorrowChallenge = dayRaw + 1 >= 1 && dayRaw + 1 <= length ? byDay(dayRaw + 1) : null;
     const catchUps = data.challenges.filter((c) => c.id !== todayChallenge?.id && data.progress.get(c.id)?.rescheduledTo === today && statuses.get(c.id) !== 'completed');
     const missed = data.challenges.filter((c) => statuses.get(c.id) === 'missed');
     const unacknowledgedMissed = missed.filter((c) => !data.progress.get(c.id)?.missedAck);
     return {
+      length,
       startDate: start,
       endDate: p.endDate,
-      phase: programPhase(start, today),
+      phase: programPhase(start, today, length),
       dayRaw,
-      day: Math.max(1, Math.min(PROGRAM_DAYS, dayRaw)),
+      day: Math.max(1, Math.min(length, dayRaw)),
       statuses,
       counts: challengeCounts(statuses),
       todayChallenge,

@@ -1,10 +1,11 @@
 import { addDays, diffDays } from './dates';
 import type { Challenge, ChallengeProgress, DisplayStatus, IsoDate } from './types';
 
-export const PROGRAM_DAYS = 30;
+/** Length of the original program; also the default for data created before lengths were configurable. */
+export const DEFAULT_PROGRAM_DAYS = 30;
 
-export function endDateFor(startDate: IsoDate): IsoDate {
-  return addDays(startDate, PROGRAM_DAYS - 1);
+export function endDateFor(startDate: IsoDate, length: number = DEFAULT_PROGRAM_DAYS): IsoDate {
+  return addDays(startDate, length - 1);
 }
 
 /** Original scheduled date for a program day. Day 1 = start date. */
@@ -19,10 +20,10 @@ export function programDayFor(startDate: IsoDate, date: IsoDate): number {
 
 export type ProgramPhase = 'before' | 'active' | 'after';
 
-export function programPhase(startDate: IsoDate, today: IsoDate): ProgramPhase {
+export function programPhase(startDate: IsoDate, today: IsoDate, length: number = DEFAULT_PROGRAM_DAYS): ProgramPhase {
   const d = programDayFor(startDate, today);
   if (d < 1) return 'before';
-  if (d > PROGRAM_DAYS) return 'after';
+  if (d > length) return 'after';
   return 'active';
 }
 

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ArrowLeft, ArrowRight, Bell, CalendarDays, Check, Dumbbell, Moon, Package, Shield, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bell, CalendarDays, Check, Dumbbell, Moon, Package, Shield, Sparkles, Target } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Backdrop } from '../../components/Scene';
 import { Logo } from '../../components/Shell';
@@ -8,11 +8,11 @@ import { EQUIPMENT } from '../../data/challenges';
 import { completeOnboarding, type OnboardingInput } from '../../db/actions';
 import { addDays, DEFAULT_TIMEZONE, formatDate, isValidIso, isValidTimeZone, todayIn, weekdayOf } from '../../domain/dates';
 import { displayName } from '../../domain/habits';
-import { endDateFor } from '../../domain/schedule';
 import { useAction, useApp } from '../../lib/appData';
 import { notificationSupport, requestPermission } from '../../lib/notifications';
+import { buildPlan, newDraft, PlanBuilder, type PlanDraft } from '../plan/PlanBuilder';
 
-const STEPS = ['Welcome', 'Start date', 'Daily rhythm', 'Habits', 'Equipment', 'Reminders', 'Mode'] as const;
+const STEPS = ['Welcome', 'Start date', 'Equipment', 'Challenges', 'Daily rhythm', 'Habits', 'Reminders', 'Mode'] as const;
 
 export function Onboarding() {
   const { data } = useApp();
@@ -35,20 +35,30 @@ export function Onboarding() {
     equipment: data.settings.equipment,
     constraints: data.settings.constraints,
     hardMode: data.settings.hardMode,
+    plan: [],
+    mode: 'auto',
+    themes: [],
   }));
+  const [draft, setDraft] = useState<PlanDraft>(() => newDraft(data.settings.equipment));
+  const cur = STEPS[step];
   const set = <K extends keyof OnboardingInput>(k: K, v: OnboardingInput[K]) => setForm((f) => ({ ...f, [k]: v }));
   const [permission, setPermission] = useState(notificationSupport().permission);
   const finish = useAction(completeOnboarding);
 
   const dateError = form.startDate && !isValidIso(form.startDate) ? 'Enter a valid date.' : null;
-  const canNext = step !== 1 || (form.startDate && !dateError && isValidTimeZone(form.timezone));
+  const canNext = cur === 'Start date' ? !!form.startDate && !dateError && isValidTimeZone(form.timezone) : cur === 'Challenges' ? draft.plan.length >= 3 : true;
+  const next = () => {
+    // Equipment is known now, so build the suggested plan around it.
+    if (cur === 'Equipment' && draft.mode === 'auto') setDraft({ ...draft, plan: buildPlan(draft, form.equipment) });
+    setStep((s) => s + 1);
+  };
 
   return (
     <div className="relative isolate min-h-dvh px-4 py-8 md:py-14">
       <Backdrop kind="welcome" full />
       <div className="mx-auto w-full max-w-xl">
         <div className="mb-6 flex items-center gap-3">
-          <Logo />
+          <Logo days={draft.plan.length || 30} />
           <div className="flex-1">
             <p className="text-xs font-medium text-ink-3">
               Setup · Step {step + 1} of {STEPS.length}
@@ -62,8 +72,8 @@ export function Onboarding() {
         </div>
 
         <Card className="animate-fade-up p-5 md:p-7" key={step}>
-          {step === 0 && (
-            <StepBody icon={<Sparkles />} title="Thirty days. Thirty new skills." lead="A private tracker for a 30-day self-improvement challenge: one new skill a day, sustainable daily habits, honest progress.">
+          {cur === 'Welcome' && (
+            <StepBody icon={<Sparkles />} title="One new skill a day." lead="A private tracker for a self-improvement challenge of any length: a new challenge every day that gets a little harder, sustainable daily habits, honest progress.">
               <ul className="mb-5 space-y-2 text-sm text-ink-2">
                 {['Everything stays on this device. No account, no tracking.', 'Daily habits rotate so you’re never doing everything at once.', 'Missed days stay visible. You decide how to catch up.'].map((t) => (
                   <li key={t} className="flex gap-2">
@@ -78,8 +88,8 @@ export function Onboarding() {
             </StepBody>
           )}
 
-          {step === 1 && (
-            <StepBody icon={<CalendarDays />} title="When does Day 1 start?" lead="Pick the day you want to begin. Day 30 lands 29 days later. You can change this freely until the program begins.">
+          {cur === 'Start date' && (
+            <StepBody icon={<CalendarDays />} title="When does Day 1 start?" lead="Pick the day you want to begin. You’ll choose how many days next. You can change this freely until the program begins.">
               <div className="grid gap-4">
                 <Field label="Start date" htmlFor="ob-start" error={dateError}>
                   <Input id="ob-start" type="date" value={form.startDate} min={addDays(today, -7)} onChange={(e) => set('startDate', e.target.value)} required />
@@ -100,9 +110,6 @@ export function Onboarding() {
                     <p>
                       <span className="text-ink-3">Day 1:</span> <strong>{formatDate(form.startDate)}</strong>
                     </p>
-                    <p className="mt-1">
-                      <span className="text-ink-3">Day 30:</span> <strong>{formatDate(endDateFor(form.startDate))}</strong>
-                    </p>
                   </div>
                 )}
                 <Field label="Timezone" htmlFor="ob-tz" hint="Detected from this device. Used for “today”, deadlines and reminders." error={isValidTimeZone(form.timezone) ? null : 'Unknown timezone'}>
@@ -112,7 +119,13 @@ export function Onboarding() {
             </StepBody>
           )}
 
-          {step === 2 && (
+          {cur === 'Challenges' && (
+            <StepBody icon={<Target />} title="Build your challenge" lead="Choose how long, and whether we pick the challenges or you start from the Signature 30.">
+              <PlanBuilder draft={draft} onChange={setDraft} equipment={form.equipment} startDate={form.startDate} />
+            </StepBody>
+          )}
+
+          {cur === 'Daily rhythm' && (
             <StepBody icon={<Moon />} title="Your daily rhythm" lead="Used to time reminders and set a realistic sleep target.">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Typical wake-up" htmlFor="ob-wake">
@@ -143,14 +156,14 @@ export function Onboarding() {
             </StepBody>
           )}
 
-          {step === 3 && (
+          {cur === 'Habits' && (
             <StepBody icon={<Dumbbell />} title="Which habits do you want?" lead="All are on by default. They rotate through the week, so most days only have a handful. You can edit any of them later.">
               <HabitPicker enabled={form.enabledHabits} onChange={(v) => set('enabledHabits', v)} />
             </StepBody>
           )}
 
-          {step === 4 && (
-            <StepBody icon={<Package />} title="Equipment & access" lead="Tick what you have. Challenges needing something you don’t have will flag it in their preparation list, so you can sort it out in advance.">
+          {cur === 'Equipment' && (
+            <StepBody icon={<Package />} title="Equipment & access" lead="Tick what you have. Suggested challenges favour what you own; anything that needs something else is flagged so you can sort it out in advance.">
               <div className="grid gap-2.5 sm:grid-cols-2">
                 {Object.entries(EQUIPMENT).map(([id, label]) => (
                   <Checkbox key={id} checked={form.equipment.includes(id)} onChange={(on) => set('equipment', on ? [...form.equipment, id] : form.equipment.filter((x) => x !== id))} label={label} />
@@ -162,7 +175,7 @@ export function Onboarding() {
             </StepBody>
           )}
 
-          {step === 5 && (
+          {cur === 'Reminders' && (
             <StepBody icon={<Bell />} title="Reminders" lead="A morning nudge with today’s challenge, and an evening check-in. Notification text never includes habit names.">
               <div className="space-y-3">
                 <Switch checked={form.notifications} onChange={(v) => set('notifications', v)} label="Morning and evening reminders" description={`At ${form.morningTime} and ${form.eveningTime}, your local time.`} />
@@ -172,7 +185,7 @@ export function Onboarding() {
             </StepBody>
           )}
 
-          {step === 6 && (
+          {cur === 'Mode' && (
             <StepBody icon={<Shield />} title="Choose your mode" lead="You can switch at any time in Settings.">
               <div className="grid gap-3" role="radiogroup" aria-label="Mode">
                 <ModeCard selected={!form.hardMode} onSelect={() => set('hardMode', false)} title="Standard" body="Clear tracking, friendly nudges. Completion still has to be recorded honestly." />
@@ -187,11 +200,11 @@ export function Onboarding() {
               Back
             </Button>
             {step < STEPS.length - 1 ? (
-              <Button variant="primary" onClick={() => setStep((s) => s + 1)} disabled={!canNext} icon={<ArrowRight className="size-4" />} className="flex-row-reverse">
-                {step === 1 && !form.startDate ? 'Pick a date' : 'Continue'}
+              <Button variant="primary" onClick={next} disabled={!canNext} icon={<ArrowRight className="size-4" />} className="flex-row-reverse">
+                {cur === 'Start date' && !form.startDate ? 'Pick a date' : 'Continue'}
               </Button>
             ) : (
-              <Button variant="primary" busy={finish.busy} onClick={() => void finish.run(form)}>
+              <Button variant="primary" busy={finish.busy} onClick={() => void finish.run({ ...form, plan: draft.plan, mode: draft.mode, themes: draft.themes })}>
                 Start my program
               </Button>
             )}

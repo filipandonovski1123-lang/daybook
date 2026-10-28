@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { quoteFor, QuoteCard } from '../../components/Scene';
 import { addDays, formatDate, parseIso, toIso, weekdayOf } from '../../domain/dates';
-import { programDayFor, PROGRAM_DAYS, STATUS_LABEL } from '../../domain/schedule';
+import { programDayFor, STATUS_LABEL } from '../../domain/schedule';
 import type { DisplayStatus, IsoDate } from '../../domain/types';
 import { useApp } from '../../lib/appData';
 import { useProgramView } from '../../lib/selectors';
@@ -91,7 +91,7 @@ export function ChallengesPage() {
 
       <div className={clsx('md:rounded-xl md:border md:border-line md:bg-surface md:p-6')}>
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-[26px] md:text-[20px]">{mode === 'calendar' ? monthTitle(month) : 'All 30 challenges'}</h2>
+          <h2 className="font-display text-[26px] md:text-[20px]">{mode === 'calendar' ? monthTitle(month) : `All ${view.length} challenges`}</h2>
           <div className="flex items-center gap-1">
             {mode === 'calendar' && (
               <>
@@ -144,7 +144,7 @@ export function ChallengesPage() {
                   <li key={date} className="flex justify-center">
                     <Link
                       to={`/challenges/${c.id}`}
-                      aria-label={`${formatDate(date, 'short')}, Day ${c.day} of ${PROGRAM_DAYS}: ${c.title}. ${STATUS_LABEL[s]}`}
+                      aria-label={`${formatDate(date, 'short')}, Day ${c.day} of ${view.length}: ${c.title}. ${STATUS_LABEL[s]}`}
                       className={clsx('animate-cell tnum flex size-10 items-center justify-center rounded-full text-[13.5px] transition-transform duration-150 hover:scale-105 active:scale-90 md:size-11', cls)}
                       style={{ ['--i' as string]: i }}
                     >

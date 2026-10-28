@@ -47,12 +47,24 @@ export type Settings = z.infer<typeof settingsSchema>;
 
 // ---------------------------------------------------------------- Program
 
+export const MIN_PROGRAM_DAYS = 3;
+export const MAX_PROGRAM_DAYS = 100;
+
+/** Broad interest groups used by the plan generator. */
+export const challengeTheme = z.enum(['mind', 'body', 'creative', 'social', 'practical', 'wellbeing']);
+export type ChallengeTheme = z.infer<typeof challengeTheme>;
+
 export const programSchema = z.object({
   id: z.literal('program'),
   name: z.string(),
   startDate: isoDate,
-  /** Always startDate + 29 days. Stored for export readability; recomputed on change. */
+  /** Always startDate + length − 1. Stored for export readability; recomputed on change. */
   endDate: isoDate,
+  /** Number of days, one challenge per day. Older data predates this and is 30. */
+  length: z.number().int().min(MIN_PROGRAM_DAYS).max(MAX_PROGRAM_DAYS).default(30),
+  /** signature = the hand-built 30; auto = generated from interests; the user may swap days either way. */
+  mode: z.enum(['signature', 'auto']).default('signature'),
+  themes: z.array(challengeTheme).default([]),
   /** Set once the user has actually begun (first started/completed challenge or start date passed). */
   startedAt: timestamp.nullable(),
   history: z.array(
@@ -126,7 +138,9 @@ export type ToolId = z.infer<typeof toolId>;
 
 export const challengeSchema = z.object({
   id: z.string(),
-  day: z.number().int().min(1).max(30),
+  day: z.number().int().min(1).max(MAX_PROGRAM_DAYS),
+  /** The library entry this day was created from (drives challenge-specific measurements). */
+  libraryId: z.string().nullable().default(null),
   title: z.string().min(1).max(120),
   category: z.string().min(1).max(60),
   difficulty: z.number().int().min(1).max(5),

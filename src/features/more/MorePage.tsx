@@ -6,7 +6,8 @@ const ITEMS = [
   { to: '/challenge', label: 'Today’s challenge', hint: 'Detail, measurements and evidence', icon: Target },
   { to: '/habits', label: 'Habits', hint: 'Weekly rotation, targets and history', icon: ListChecks },
   { to: '/reflection', label: 'Reflections', hint: 'Evening check-in and journal', icon: NotebookPen },
-  { to: '/calendar', label: 'All challenges', hint: 'Calendar and list of the 30 days', icon: List },
+  { to: '/plan', label: 'Your plan', hint: 'Length, challenges and swapping days', icon: List },
+  { to: '/calendar', label: 'All challenges', hint: 'Calendar and list view', icon: List },
   { to: '/tools', label: 'Tools', hint: 'Focus timer, tests and stopwatches', icon: Timer },
   { to: '/settings', label: 'Settings', hint: 'Reminders, Hard Mode, data', icon: Settings },
 ] as const;

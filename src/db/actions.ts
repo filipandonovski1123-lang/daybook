@@ -1,4 +1,5 @@
-import { buildChallenges } from '../data/challenges';
+import { buildChallenges, dayId, instantiate } from '../data/challenges';
+import { getLibraryItem } from '../data/library';
 import { buildHabits } from '../data/habits';
 import { addDays, detectTimeZone, isValidIso, isValidTimeZone, todayIn } from '../domain/dates';
 import { entryId, isPlannedOn, statusFor, type EntryInput } from '../domain/habits';
@@ -6,6 +7,9 @@ import { endDateFor, isFuture } from '../domain/schedule';
 import {
   challengeSchema,
   habitSchema,
+  MAX_PROGRAM_DAYS,
+  MIN_PROGRAM_DAYS,
+  type ChallengeTheme,
   type Achievement,
   type Attempt,
   type Challenge,
@@ -100,12 +104,28 @@ export interface OnboardingInput {
   equipment: string[];
   constraints: string;
   hardMode: boolean;
+  /** Library ids in day order (day 1 first). Its length is the program length. */
+  plan: string[];
+  mode: Program['mode'];
+  themes: ChallengeTheme[];
+}
+
+/** Turn a list of library ids into day rows. Throws on unknown ids or a bad length. */
+function planToChallenges(plan: readonly string[], now: number): Challenge[] {
+  if (plan.length < MIN_PROGRAM_DAYS || plan.length > MAX_PROGRAM_DAYS) throw new UserError(`A program must be ${MIN_PROGRAM_DAYS}–${MAX_PROGRAM_DAYS} days.`);
+  if (new Set(plan).size !== plan.length) throw new UserError('Each challenge can only appear once in a plan.');
+  return plan.map((id, i) => {
+    const item = getLibraryItem(id);
+    if (!item) throw new UserError('That challenge is no longer available. Pick another.');
+    return instantiate(item, i + 1, now);
+  });
 }
 
 export async function completeOnboarding(input: OnboardingInput, now = Date.now()): Promise<void> {
   if (!isValidIso(input.startDate)) throw new UserError('Choose a valid start date.');
   if (!isValidTimeZone(input.timezone)) throw new UserError('Unknown timezone.');
-  await db.transaction('rw', [db.settings, db.program, db.habits, db.reminders], async () => {
+  const challenges = planToChallenges(input.plan, now);
+  await db.transaction('rw', [db.settings, db.program, db.habits, db.reminders, db.challenges, db.progress], async () => {
     const s = await requireSettings();
     await db.settings.put({
       ...s,
@@ -122,12 +142,19 @@ export async function completeOnboarding(input: OnboardingInput, now = Date.now(
     const existing = await db.program.get('program');
     await db.program.put({
       id: 'program',
-      name: '30-Day Challenge',
+      name: `${challenges.length}-Day Challenge`,
       startDate: input.startDate,
-      endDate: endDateFor(input.startDate),
+      endDate: endDateFor(input.startDate, challenges.length),
+      length: challenges.length,
+      mode: input.mode,
+      themes: input.themes,
       startedAt: existing?.startedAt ?? null,
       history: existing?.history ?? [],
     });
+    // A fresh plan: nothing has been logged yet during onboarding.
+    await db.challenges.clear();
+    await db.challenges.bulkAdd(challenges);
+    await db.progress.clear();
     const habits = await db.habits.toArray();
     for (const h of habits) {
       const patch: Partial<Habit> = { enabled: input.enabledHabits.includes(h.id) };
@@ -179,9 +206,59 @@ export async function changeStartDate(newStart: IsoDate, opts: { confirmed: bool
     await db.program.put({
       ...p,
       startDate: newStart,
-      endDate: endDateFor(newStart),
+      endDate: endDateFor(newStart, p.length),
       history: [...p.history, { at: now, from: p.startDate, to: newStart, reason: opts.reason ?? (started ? 'Changed after start' : 'Changed before start') }],
     });
+  });
+}
+
+// ---------------------------------------------------------------- plan
+
+/** True once anything has been logged against any challenge (then only single-day swaps are allowed). */
+async function planHasActivity(): Promise<boolean> {
+  const active = await db.progress.where('status').anyOf('in_progress', 'paused', 'completed', 'attempted').count();
+  return active > 0 || (await db.attempts.count()) > 0 || (await db.evidence.count()) > 0;
+}
+
+/**
+ * Replace the whole plan (and with it the program length). Only before anything has been logged —
+ * afterwards individual future days can still be swapped.
+ */
+export async function replacePlan(plan: string[], opts: { mode: Program['mode']; themes: ChallengeTheme[] }, now = Date.now()): Promise<void> {
+  const challenges = planToChallenges(plan, now);
+  if (await planHasActivity()) throw new UserError('You’ve already logged progress, so the plan can’t be rebuilt. Swap individual upcoming days instead.');
+  await db.transaction('rw', [db.program, db.challenges, db.progress], async () => {
+    const p = await requireProgram();
+    await db.challenges.clear();
+    await db.challenges.bulkAdd(challenges);
+    await db.progress.clear();
+    await db.program.put({ ...p, length: challenges.length, name: `${challenges.length}-Day Challenge`, endDate: endDateFor(p.startDate, challenges.length), mode: opts.mode, themes: opts.themes });
+  });
+}
+
+/** Can this day still be swapped for a different challenge? */
+export async function canSwapDay(day: number): Promise<boolean> {
+  const id = dayId(day);
+  const p = await db.progress.get(id);
+  if (p && p.status !== 'not_started') return false;
+  return (await db.attempts.where('challengeId').equals(id).count()) === 0 && (await db.evidence.where('challengeId').equals(id).count()) === 0;
+}
+
+/** Put a different library challenge on one day. The old definition is kept as a revision. */
+export async function swapDay(day: number, libraryId: string, now = Date.now()): Promise<void> {
+  const item = getLibraryItem(libraryId);
+  if (!item) throw new UserError('That challenge isn’t available.');
+  if (!(await canSwapDay(day))) throw new UserError('This day already has progress logged, so it can’t be swapped.');
+  const id = dayId(day);
+  await db.transaction('rw', [db.challenges, db.revisions, db.progress], async () => {
+    const current = await db.challenges.get(id);
+    if (!current) throw new UserError('Day not found.');
+    const dupe = (await db.challenges.toArray()).find((c) => c.libraryId === libraryId && c.id !== id);
+    if (dupe) throw new UserError(`That challenge is already on Day ${dupe.day}.`);
+    await db.revisions.add({ id: newId('rev'), challengeId: id, at: now, previous: current });
+    await db.challenges.put(instantiate(item, day, now));
+    // Preparation ticks and notes belonged to the old challenge.
+    await db.progress.delete(id);
   });
 }
 

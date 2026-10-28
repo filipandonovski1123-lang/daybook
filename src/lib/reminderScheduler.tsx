@@ -4,7 +4,7 @@ import { db } from '../db/db';
 import { addDays } from '../domain/dates';
 import { dayAdherence } from '../domain/habits';
 import { dueReminders, reminderMessage } from '../domain/reminders';
-import { programDayFor, PROGRAM_DAYS } from '../domain/schedule';
+import { programDayFor } from '../domain/schedule';
 import type { ReminderType } from '../domain/types';
 import { useApp } from './appData';
 import { showSystemNotification } from './notifications';
@@ -55,15 +55,17 @@ export function ReminderScheduler({ children }: { children: ReactNode }) {
         if (d.suppressed) continue;
         const start = data.program?.startDate ?? null;
         const day = start ? programDayFor(start, d.date) : 0;
-        const challenge = day >= 1 && day <= PROGRAM_DAYS ? data.challenges.find((c) => c.day === day) : undefined;
+        const length = data.program?.length ?? data.challenges.length;
+        const challenge = day >= 1 && day <= length ? data.challenges.find((c) => c.day === day) : undefined;
         const adherence = dayAdherence(data.habits, data.entries, d.date);
         const challengeOpen = challenge && !['completed', 'attempted'].includes(data.progress.get(challenge.id)?.status ?? '') ? 1 : 0;
         const msg = reminderMessage(d.reminder.type, {
           startDate: start,
+          length,
           date: d.date,
           challengeTitle: challenge?.title ?? null,
           // Hard Mode pressure only applies while the program is actually running.
-          hardMode: data.settings.hardMode && day >= 1 && day <= PROGRAM_DAYS,
+          hardMode: data.settings.hardMode && day >= 1 && day <= length,
           openItems: Math.max(0, adherence.planned - adherence.done) + challengeOpen,
         });
         let shownBySystem = false;

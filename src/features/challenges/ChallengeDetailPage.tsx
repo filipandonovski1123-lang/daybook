@@ -1,14 +1,17 @@
 import clsx from 'clsx';
-import { ArrowLeft, Calculator, Check, ChevronLeft, ChevronRight, ClipboardList, Hourglass, Mountain, Pencil, ShieldAlert, Sparkles, Target, Timer, Wrench } from 'lucide-react';
+import { ArrowLeft, Calculator, Check, ChevronLeft, ChevronRight, ClipboardList, Hourglass, Mountain, Pencil, ShieldAlert, Shuffle, Sparkles, Target, Timer, Wrench } from 'lucide-react';
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { QuoteCard, quoteFor } from '../../components/Scene';
 import { Badge, Button, Difficulty, ProgressRing, RatingPicker, Textarea } from '../../components/ui';
 import { EQUIPMENT } from '../../data/challenges';
-import { setNotes, setSelfAssessment, toggleCriterion, togglePrep } from '../../db/actions';
+import { challengeKey } from '../../data/library';
+import { setNotes, setSelfAssessment, swapDay, toggleCriterion, togglePrep } from '../../db/actions';
+import { LibraryPicker } from '../plan/PlanBuilder';
+import { useDayLocked } from '../plan/PlanPage';
 import { checkCompletion, num, personalBests } from '../../domain/criteria';
 import { formatDate, formatDuration, formatInstant } from '../../domain/dates';
-import { PROGRAM_DAYS, scheduledDateFor } from '../../domain/schedule';
+import { scheduledDateFor } from '../../domain/schedule';
 import type { Challenge, ToolId } from '../../domain/types';
 import { useAction, useApp, useNow } from '../../lib/appData';
 import { AnimatedNumber } from '../../lib/motion';
@@ -70,6 +73,9 @@ function Detail({ challenge }: { challenge: Challenge }) {
   const evidence = data.evidence.filter((e) => e.challengeId === challenge.id);
   const check = checkCompletion(challenge, progress ?? { metrics: {}, checked: [] }, evidence);
   const [editOpen, setEditOpen] = useState(false);
+  const [swapOpen, setSwapOpen] = useState(false);
+  const dayLocked = useDayLocked();
+  const swap = useAction((id: string) => swapDay(challenge.day, id), { success: `Day ${challenge.day} swapped.` });
   const [tab, setTab] = useState<Tab>('plan');
   const original = data.program ? scheduledDateFor(data.program.startDate, challenge.day) : null;
   const prev = data.challenges.find((c) => c.day === challenge.day - 1);
@@ -81,7 +87,8 @@ function Detail({ challenge }: { challenge: Challenge }) {
   const pct = main.length ? Math.round((metMain / main.length) * 100) : 0;
   const prepDone = progress?.prepDone.length ?? 0;
   const sessions = data.attempts.filter((a) => a.challengeId === challenge.id).length;
-  const overall = Math.round(((view?.counts.completed ?? 0) / PROGRAM_DAYS) * 100);
+  const length = view?.length ?? data.challenges.length;
+  const overall = Math.round(((view?.counts.completed ?? 0) / (length || 1)) * 100);
 
   return (
     <div>
@@ -92,7 +99,7 @@ function Detail({ challenge }: { challenge: Challenge }) {
         </button>
         <div className="text-center">
           <p className="font-display text-[28px] leading-none">Day {challenge.day}</p>
-          <p className="mt-1 text-[11px] text-ink-3">of {PROGRAM_DAYS}</p>
+          <p className="mt-1 text-[11px] text-ink-3">of {length}</p>
         </div>
         <div className="flex items-center justify-self-end">
           {prev ? (
@@ -119,9 +126,16 @@ function Detail({ challenge }: { challenge: Challenge }) {
       <header className="mt-8">
         <div className="flex items-center justify-between gap-3">
           <p className="eyebrow">{challenge.category}</p>
-          <button type="button" onClick={() => setEditOpen(true)} className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-3 hover:text-ink">
-            <Pencil className="size-3.5" strokeWidth={1.6} /> Edit
-          </button>
+          <span className="flex items-center gap-4">
+            {!dayLocked(challenge.id) && (
+              <button type="button" onClick={() => setSwapOpen(true)} className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-3 hover:text-ink">
+                <Shuffle className="size-3.5" strokeWidth={1.6} /> Swap
+              </button>
+            )}
+            <button type="button" onClick={() => setEditOpen(true)} className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-3 hover:text-ink">
+              <Pencil className="size-3.5" strokeWidth={1.6} /> Edit
+            </button>
+          </span>
         </div>
         <h1 className="font-display mt-2 text-[32px] leading-[1.1] md:text-[40px]">{challenge.title}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[12.5px] text-ink-3">
@@ -189,6 +203,18 @@ function Detail({ challenge }: { challenge: Challenge }) {
 
       <QuoteCard quote={quoteFor(challenge.day + 1)} scene="peaks" layout="overlay" className="mt-12 h-[150px]" />
       <EditChallengeDialog challenge={challenge} open={editOpen} onClose={() => setEditOpen(false)} />
+      <LibraryPicker
+        open={swapOpen}
+        title={`Swap Day ${challenge.day}`}
+        current={challengeKey(challenge)}
+        exclude={data.challenges.filter((c) => c.id !== challenge.id).map((c) => challengeKey(c))}
+        equipment={data.settings.equipment}
+        onClose={() => setSwapOpen(false)}
+        onPick={(id) => {
+          setSwapOpen(false);
+          if (id !== challengeKey(challenge)) void swap.run(id);
+        }}
+      />
     </div>
   );
 }
