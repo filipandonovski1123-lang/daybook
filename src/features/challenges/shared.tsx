@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { CalendarClock, Check, CircleCheck, CircleDashed, CircleDot, CircleX, Clock, Flag, Pause, Play, RotateCcw, TriangleAlert, Undo2 } from 'lucide-react';
+import { CalendarClock, Moon, Check, CircleCheck, CircleDashed, CircleDot, CircleX, Clock, Flag, Pause, Play, RotateCcw, TriangleAlert, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { Badge, Button, Checkbox, ConfirmDialog, Dialog, Field, Input, Textarea, type Tone } from '../../components/ui';
 import { completeChallenge, pauseChallenge, rescheduleChallenge, startChallenge, toggleCriterion, undoCompletion } from '../../db/actions';
@@ -19,6 +19,7 @@ export const STATUS_TONE: Record<DisplayStatus, Tone> = {
   attempted: 'violet',
   missed: 'danger',
   rescheduled: 'warn',
+  rest: 'neutral',
 };
 
 export const STATUS_ICON: Record<DisplayStatus, typeof Check> = {
@@ -29,6 +30,7 @@ export const STATUS_ICON: Record<DisplayStatus, typeof Check> = {
   attempted: Flag,
   missed: CircleX,
   rescheduled: CalendarClock,
+  rest: Moon,
 };
 
 export function StatusBadge({ status }: { status: DisplayStatus }) {
@@ -63,6 +65,7 @@ export function ChallengeActions({ challenge, compact = false }: { challenge: Ch
   const undo = useAction(() => undoCompletion(challenge.id), { success: 'Completion undone.' });
 
   const running = progress?.status === 'in_progress';
+  if (challenge.kind === 'rest') return null;
   const paused = progress?.status === 'paused';
   const done = status === 'completed' || status === 'attempted';
 

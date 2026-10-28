@@ -20,6 +20,7 @@ const STRIP: Record<string, string> = {
   attempted: 'bg-slate-soft text-slate',
   missed: 'bg-danger-soft text-danger',
   rescheduled: 'bg-warn-soft text-warn',
+  rest: 'bg-transparent text-ink-3 border border-dotted border-line-strong',
 };
 
 export default function ProgressPage() {
@@ -74,7 +75,7 @@ export default function ProgressPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Progress" subtitle={view.phase === 'before' ? `Starts ${formatDate(view.startDate, 'short')} — charts fill in as you log real data.` : `Day ${view.day} of ${view.length} · every number below comes from what you logged.`} />
+      <PageHeader title="Progress" subtitle={view.phase === 'before' ? `Starts ${formatDate(view.startDate, 'short')} — charts fill in as you log real data.` : `Day ${view.day} of ${view.length} · every number below comes from what you logged.`} action={<Link to="/summary" className="whitespace-nowrap text-[13px] text-slate hover:underline">Summary →</Link>} />
 
       <Card className="grid grid-cols-2 gap-x-4 gap-y-5 p-5 sm:grid-cols-4">
         <Stat label="Current day" value={view.phase === 'before' ? '—' : view.day} sub={view.phase === 'active' ? `${view.length - view.day} to go` : view.phase === 'after' ? 'Finished' : 'Not started'} />

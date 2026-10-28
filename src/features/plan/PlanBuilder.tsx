@@ -1,67 +1,104 @@
 import clsx from 'clsx';
-import { Lock, Search, Shuffle, Wrench } from 'lucide-react';
+import { Lock, Moon, Plus, Search, Shuffle, Wrench } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge, Button, Dialog, Difficulty, Input, Segmented } from '../../components/ui';
-import { getLibraryItem, LIBRARY, SIGNATURE_PLAN, THEMES, type LibraryItem } from '../../data/library';
+import { SIGNATURE_PLAN, THEMES, type LibraryItem } from '../../data/library';
 import { addDays, formatDate } from '../../domain/dates';
-import { generatePlan, LENGTH_PRESETS, sortByDifficulty } from '../../domain/planner';
-import { MAX_PROGRAM_DAYS, MIN_PROGRAM_DAYS, type ChallengeTheme } from '../../domain/types';
+import { generatePlan, LENGTH_PRESETS, REST_ID, sortByDifficulty, withRestDays } from '../../domain/planner';
+import { MAX_PROGRAM_DAYS, MIN_PROGRAM_DAYS, type ChallengeTheme, type DifficultyCurve } from '../../domain/types';
+import { useLibrary } from '../../lib/library';
+import { CustomChallengeDialog } from '../library/CustomChallengeDialog';
 
 export interface PlanDraft {
   length: number;
   mode: 'signature' | 'auto';
   themes: ChallengeTheme[];
+  curve: DifficultyCurve;
+  restEvery: number;
   plan: string[];
   seed: number;
 }
 
-/** Build the plan for a draft's settings. Signature mode always means the 30-day Signature plan. */
-export function buildPlan(d: Omit<PlanDraft, 'plan'>, equipment: readonly string[]): string[] {
-  if (d.mode === 'signature') return [...SIGNATURE_PLAN];
-  return generatePlan(LIBRARY, { length: d.length, themes: d.themes, equipment, seed: d.seed });
+type Library = ReturnType<typeof useLibrary>;
+
+/** Build the plan for a draft's settings. Signature mode is the Signature 30 (plus any rest days). */
+export function buildPlan(d: Omit<PlanDraft, 'plan'>, equipment: readonly string[], library: readonly LibraryItem[]): string[] {
+  if (d.mode === 'signature') return withRestDays(SIGNATURE_PLAN, d.restEvery);
+  return generatePlan(library, { length: d.length, themes: d.themes, equipment, seed: d.seed, curve: d.curve, restEvery: d.restEvery });
 }
 
-export function newDraft(equipment: readonly string[], length = 30): PlanDraft {
-  const base = { length, mode: 'auto' as const, themes: [] as ChallengeTheme[], seed: Math.floor(Math.random() * 1e9) };
-  return { ...base, plan: buildPlan(base, equipment) };
+export function newDraft(equipment: readonly string[], library: readonly LibraryItem[], length = 30): PlanDraft {
+  const base = { length, mode: 'auto' as const, themes: [] as ChallengeTheme[], curve: 'steady' as const, restEvery: 0, seed: Math.floor(Math.random() * 1e9) };
+  return { ...base, plan: buildPlan(base, equipment, library) };
+}
+
+/** Re-sort the challenges easiest-first while leaving rest days in their slots. */
+export function resortKeepingRest(plan: readonly string[], get: Library['get']): string[] {
+  const challenges = sortByDifficulty(plan.filter((id) => id !== REST_ID).map((id) => get(id)).filter((x): x is LibraryItem => !!x)).map((i) => i.id);
+  let next = 0;
+  return plan.map((id) => (id === REST_ID ? id : (challenges[next++] ?? id)));
 }
 
 const fmtHours = (m: number) => (m < 60 ? `${m} min` : `${Math.round((m / 60) * 4) / 4} h`);
 
-/** Length, style and interests, plus the day-by-day plan with per-day swapping. */
+function Chips<T extends string | number>({ label, value, options, onChange }: { label: string; value: T; options: { value: T; label: string; hint?: string }[]; onChange: (v: T) => void }) {
+  return (
+    <div className="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
+      {options.map((o) => (
+        <button
+          key={String(o.value)}
+          type="button"
+          role="radio"
+          aria-checked={value === o.value}
+          title={o.hint}
+          onClick={() => onChange(o.value)}
+          className={clsx('rounded-full border px-3.5 py-1.5 text-[13px] transition-colors', value === o.value ? 'border-slate bg-slate-soft text-slate' : 'border-line bg-surface text-ink-2 hover:text-ink')}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Length, style, curve, rest days and interests, plus the day-by-day plan with per-day swapping. */
 export function PlanBuilder({ draft, onChange, equipment, startDate }: { draft: PlanDraft; onChange: (d: PlanDraft) => void; equipment: readonly string[]; startDate?: string }) {
+  const lib = useLibrary();
   const [custom, setCustom] = useState(() => (LENGTH_PRESETS.includes(draft.length as (typeof LENGTH_PRESETS)[number]) ? '' : String(draft.length)));
   const update = (patch: Partial<Omit<PlanDraft, 'plan'>>) => {
     const next = { ...draft, ...patch };
-    if (patch.mode === 'signature') next.length = 30;
-    onChange({ ...next, plan: buildPlan(next, equipment) });
+    onChange({ ...next, plan: buildPlan(next, equipment, lib.items) });
   };
   const setLength = (n: number) => {
     if (!Number.isFinite(n)) return;
     const len = Math.min(MAX_PROGRAM_DAYS, Math.max(MIN_PROGRAM_DAYS, Math.round(n)));
-    update({ length: len, mode: len === 30 ? draft.mode : 'auto' });
+    update({ length: len, mode: 'auto' });
   };
+  const restDays = draft.plan.filter((id) => id === REST_ID).length;
 
   return (
     <div className="space-y-6">
       <section>
         <h3 className="font-display text-[18px]">How many days?</h3>
         <div className="mt-3 flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Program length">
-          {LENGTH_PRESETS.map((n) => (
-            <button
-              key={n}
-              type="button"
-              role="radio"
-              aria-checked={draft.length === n && !custom}
-              onClick={() => {
-                setCustom('');
-                setLength(n);
-              }}
-              className={clsx('h-10 min-w-12 rounded-lg border px-3 text-sm font-medium transition-colors', draft.length === n && !custom ? 'border-slate bg-slate text-white dark:text-[#14181c]' : 'border-line bg-surface hover:border-line-strong')}
-            >
-              {n}
-            </button>
-          ))}
+          {LENGTH_PRESETS.map((n) => {
+            const on = draft.mode === 'auto' && draft.length === n && !custom;
+            return (
+              <button
+                key={n}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => {
+                  setCustom('');
+                  setLength(n);
+                }}
+                className={clsx('h-10 min-w-12 rounded-lg border px-3 text-sm font-medium transition-colors', on ? 'border-slate bg-slate text-white dark:text-[#14181c]' : 'border-line bg-surface hover:border-line-strong')}
+              >
+                {n}
+              </button>
+            );
+          })}
           <label className="flex items-center gap-2 text-sm text-ink-2">
             or
             <Input
@@ -81,7 +118,8 @@ export function PlanBuilder({ draft, onChange, equipment, startDate }: { draft: 
           </label>
         </div>
         <p className="mt-2 text-xs text-ink-3">
-          {MIN_PROGRAM_DAYS}–{MAX_PROGRAM_DAYS} days, one challenge a day.
+          {MIN_PROGRAM_DAYS}–{MAX_PROGRAM_DAYS} days.
+          {restDays ? ` ${draft.plan.length - restDays} challenges + ${restDays} rest day${restDays === 1 ? '' : 's'}.` : ''}
           {startDate ? ` Day ${draft.plan.length} would be ${formatDate(addDays(startDate, draft.plan.length - 1))}.` : ''}
         </p>
       </section>
@@ -92,7 +130,39 @@ export function PlanBuilder({ draft, onChange, equipment, startDate }: { draft: 
           <StyleCard selected={draft.mode === 'auto'} onSelect={() => update({ mode: 'auto' })} title="Choose for me" body="A plan from the library that gets harder every day, matched to your interests and equipment." />
           <StyleCard selected={draft.mode === 'signature'} onSelect={() => update({ mode: 'signature' })} title="Signature 30" body="The hand-built 30-day program: juggling on Day 1 through a Megaminx on Day 30." />
         </div>
-        <p className="mt-2 text-xs text-ink-3">Either way, you can swap any day for something else from the library.</p>
+        <p className="mt-2 text-xs text-ink-3">Either way, you can swap any day — including for a challenge you write yourself.</p>
+      </section>
+
+      {draft.mode === 'auto' && (
+        <section>
+          <h3 className="font-display text-[18px]">How fast should it get harder?</h3>
+          <Chips
+            label="Difficulty curve"
+            value={draft.curve}
+            onChange={(curve) => update({ curve })}
+            options={[
+              { value: 'gentle', label: 'Gentle', hint: 'Stays easier for longer; the hard ones come near the end' },
+              { value: 'steady', label: 'Steady', hint: 'An even climb from easy to hard' },
+              { value: 'steep', label: 'Steep', hint: 'Gets challenging quickly' },
+            ]}
+          />
+          <p className="mt-2 text-xs text-ink-3">{draft.curve === 'gentle' ? 'Mostly easier challenges, with the hardest saved for the end.' : draft.curve === 'steep' ? 'A short warm-up, then mostly demanding challenges.' : 'An even climb from easy to hard.'}</p>
+        </section>
+      )}
+
+      <section>
+        <h3 className="font-display text-[18px]">Rest days</h3>
+        <Chips
+          label="Rest days"
+          value={draft.restEvery}
+          onChange={(restEvery) => update({ restEvery })}
+          options={[
+            { value: 0, label: 'None' },
+            { value: 7, label: 'Every 7th day' },
+            { value: 5, label: 'Every 5th day' },
+          ]}
+        />
+        <p className="mt-2 text-xs text-ink-3">A rest or catch-up day: recover, or redo something you missed. Rest days never count as missed.{draft.mode === 'signature' && draft.restEvery ? ' They’re added around the Signature 30, so the program gets longer.' : ''}</p>
       </section>
 
       {draft.mode === 'auto' && (
@@ -131,7 +201,7 @@ export function PlanBuilder({ draft, onChange, equipment, startDate }: { draft: 
             </Button>
           )}
         </div>
-        <p className="mt-1 text-xs text-ink-3">Easiest first — each day is as hard as or harder than the one before.</p>
+        <p className="mt-1 text-xs text-ink-3">Easiest first — each challenge is as hard as or harder than the one before.</p>
         <PlanList
           plan={draft.plan}
           equipment={equipment}
@@ -139,8 +209,7 @@ export function PlanBuilder({ draft, onChange, equipment, startDate }: { draft: 
           onSwap={(day, id) => {
             const next = [...draft.plan];
             next[day - 1] = id;
-            const items = next.map((x) => getLibraryItem(x)).filter((x): x is LibraryItem => !!x);
-            onChange({ ...draft, plan: sortByDifficulty(items).map((i) => i.id) });
+            onChange({ ...draft, plan: resortKeepingRest(next, lib.get) });
           }}
         />
       </section>
@@ -165,31 +234,39 @@ function StyleCard({ selected, onSelect, title, body }: { selected: boolean; onS
  * Swapping opens the library picker.
  */
 export function PlanList({ plan, equipment, onSwap, locked, className }: { plan: string[]; equipment: readonly string[]; onSwap: (day: number, libraryId: string) => void; locked?: (day: number) => boolean; className?: string }) {
+  const lib = useLibrary();
   const [swapDay, setSwapDay] = useState<number | null>(null);
   const has = new Set(equipment);
   return (
     <>
       <ol className={clsx('divide-y divide-line rounded-xl border border-line bg-surface', className)}>
         {plan.map((id, i) => {
-          const item = getLibraryItem(id);
+          const item = lib.get(id);
           if (!item) return null;
+          const rest = id === REST_ID;
           const missing = item.equipment.filter((e) => !has.has(e));
           const isLocked = locked?.(i + 1) ?? false;
           return (
-            <li key={`${i}-${id}`} className="flex items-center gap-3 px-3.5 py-3">
+            <li key={`${i}-${id}`} className={clsx('flex items-center gap-3 px-3.5 py-3', rest && 'bg-surface-2/50')}>
               <span className="font-display tnum w-7 shrink-0 text-center text-[17px] text-ink-3">{i + 1}</span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14px]">{item.title}</span>
-                <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11.5px] text-ink-3">
-                  <span>{item.category}</span>
-                  <Difficulty value={item.difficulty} />
-                  <span>~{fmtHours(item.estimatedMinutes)}</span>
-                  {missing.length > 0 && (
-                    <span className="inline-flex items-center gap-1 text-warn">
-                      <Wrench className="size-3" aria-hidden /> needs equipment
-                    </span>
-                  )}
+                <span className={clsx('flex items-center gap-1.5 truncate text-[14px]', rest && 'text-ink-2')}>
+                  {rest && <Moon className="size-3.5 shrink-0" aria-hidden />}
+                  {item.title}
+                  {id.startsWith('custom:') && <Badge tone="violet">Yours</Badge>}
                 </span>
+                {!rest && (
+                  <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11.5px] text-ink-3">
+                    <span>{item.category}</span>
+                    <Difficulty value={item.difficulty} />
+                    <span>~{fmtHours(item.estimatedMinutes)}</span>
+                    {missing.length > 0 && (
+                      <span className="inline-flex items-center gap-1 text-warn">
+                        <Wrench className="size-3" aria-hidden /> needs equipment
+                      </span>
+                    )}
+                  </span>
+                )}
               </span>
               {isLocked ? (
                 <Lock className="size-4 shrink-0 text-ink-3" aria-label="Started — can’t be swapped" />
@@ -205,7 +282,7 @@ export function PlanList({ plan, equipment, onSwap, locked, className }: { plan:
       <LibraryPicker
         open={swapDay !== null}
         title={swapDay ? `Choose a challenge for Day ${swapDay}` : ''}
-        exclude={plan.filter((_, i) => i + 1 !== swapDay)}
+        exclude={plan.filter((id, i) => i + 1 !== swapDay && id !== REST_ID)}
         current={swapDay ? plan[swapDay - 1] : undefined}
         equipment={equipment}
         onClose={() => setSwapDay(null)}
@@ -218,68 +295,105 @@ export function PlanList({ plan, equipment, onSwap, locked, className }: { plan:
   );
 }
 
-/** Searchable, filterable list of every library challenge. */
+/** Searchable, filterable list of every library challenge (including your own). */
 export function LibraryPicker({ open, title, exclude, current, equipment, onClose, onPick }: { open: boolean; title: string; exclude: readonly string[]; current?: string; equipment: readonly string[]; onClose: () => void; onPick: (id: string) => void }) {
   return open ? <PickerBody title={title} exclude={exclude} current={current} equipment={equipment} onClose={onClose} onPick={onPick} /> : null;
 }
 
 function PickerBody({ title, exclude, current, equipment, onClose, onPick }: { title: string; exclude: readonly string[]; current?: string; equipment: readonly string[]; onClose: () => void; onPick: (id: string) => void }) {
-  const [q, setQ] = useState('');
-  const [theme, setTheme] = useState<ChallengeTheme | 'all'>('all');
-  const [level, setLevel] = useState<'all' | '1' | '2' | '3' | '4' | '5'>('all');
+  const lib = useLibrary();
+  const [creating, setCreating] = useState(false);
+  const { q, setQ, theme, setTheme, level, setLevel, items } = useLibraryFilters(lib.items);
   const excluded = useMemo(() => new Set(exclude), [exclude]);
   const has = new Set(equipment);
+  return (
+    <>
+      <Dialog open={!creating} onClose={onClose} title={title} size="lg">
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" aria-hidden />
+              <Input autoFocus aria-label="Search challenges" placeholder={`Search ${lib.items.length} challenges`} value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
+            </div>
+            <Button icon={<Plus className="size-4" />} onClick={() => setCreating(true)}>
+              Create your own
+            </Button>
+          </div>
+          <LibraryFilters theme={theme} setTheme={setTheme} level={level} setLevel={setLevel} />
+          <p className="text-xs text-ink-3">{items.length} challenges · difficulty 1 (gentle) to 5 (demanding)</p>
+          {current === REST_ID || (
+            <ul className="divide-y divide-line rounded-xl border border-line">
+              <RestOption onPick={onPick} />
+            </ul>
+          )}
+          <ul className="divide-y divide-line rounded-xl border border-line">
+            {items.map((i) => {
+              const taken = excluded.has(i.id);
+              const missing = i.equipment.filter((e) => !has.has(e));
+              return (
+                <li key={i.id}>
+                  <button type="button" disabled={taken} onClick={() => onPick(i.id)} className={clsx('flex w-full items-start gap-3 px-3.5 py-3 text-left transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-45', i.id === current && 'bg-slate-soft')}>
+                    <LibraryRow item={i} badges={<>{i.id === current && <Badge tone="info">Current</Badge>}{taken && <Badge>In plan</Badge>}</>} missing={missing.length > 0} />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </Dialog>
+      <CustomChallengeDialog open={creating} onClose={() => setCreating(false)} onSaved={(c) => onPick(c.id)} />
+    </>
+  );
+}
+
+function RestOption({ onPick }: { onPick: (id: string) => void }) {
+  return (
+    <li>
+      <button type="button" onClick={() => onPick(REST_ID)} className="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors hover:bg-surface-2">
+        <Moon className="size-4 text-ink-3" aria-hidden />
+        <span className="text-[14px]">Make this a rest & catch-up day</span>
+      </button>
+    </li>
+  );
+}
+
+export function LibraryRow({ item, badges, missing }: { item: LibraryItem; badges?: React.ReactNode; missing?: boolean }) {
+  return (
+    <span className="min-w-0 flex-1">
+      <span className="flex flex-wrap items-center gap-2 text-[14px]">
+        {item.title}
+        {item.id.startsWith('custom:') && <Badge tone="violet">Yours</Badge>}
+        {badges}
+      </span>
+      <span className="mt-0.5 block text-[12.5px] leading-snug text-ink-2">{item.objective}</span>
+      <span className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11.5px] text-ink-3">
+        <span>{item.category}</span>
+        <Difficulty value={item.difficulty} />
+        <span>~{fmtHours(item.estimatedMinutes)}</span>
+        {missing && <span className="text-warn">needs equipment</span>}
+      </span>
+    </span>
+  );
+}
+
+type Level = 'all' | '1' | '2' | '3' | '4' | '5';
+
+export function useLibraryFilters(all: readonly LibraryItem[]) {
+  const [q, setQ] = useState('');
+  const [theme, setTheme] = useState<ChallengeTheme | 'all'>('all');
+  const [level, setLevel] = useState<Level>('all');
   const items = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return sortByDifficulty(
-      LIBRARY.filter((i) => (theme === 'all' || i.theme === theme) && (level === 'all' || i.difficulty === Number(level)) && (!needle || `${i.title} ${i.category} ${i.objective}`.toLowerCase().includes(needle))),
-    );
-  }, [q, theme, level]);
+    return sortByDifficulty(all.filter((i) => (theme === 'all' || i.theme === theme) && (level === 'all' || i.difficulty === Number(level)) && (!needle || `${i.title} ${i.category} ${i.objective}`.toLowerCase().includes(needle))));
+  }, [all, q, theme, level]);
+  return { q, setQ, theme, setTheme, level, setLevel, items };
+}
+
+export function LibraryFilters({ theme, setTheme, level, setLevel }: { theme: ChallengeTheme | 'all'; setTheme: (t: ChallengeTheme | 'all') => void; level: Level; setLevel: (l: Level) => void }) {
   return (
-    <Dialog open onClose={onClose} title={title} size="lg">
-      <div className="space-y-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" aria-hidden />
-          <Input autoFocus aria-label="Search challenges" placeholder={`Search ${LIBRARY.length} challenges`} value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
-        </div>
-        <div className="scrollbar-none -mx-1 flex max-w-full items-center gap-2 overflow-x-auto px-1">
-          <Segmented
-            label="Interest"
-            size="sm"
-            value={theme}
-            onChange={setTheme}
-            options={[{ value: 'all' as const, label: 'All' }, ...THEMES.map((t) => ({ value: t.id, label: t.label }))]}
-          />
-          <Segmented label="Difficulty" size="sm" value={level} onChange={setLevel} options={[{ value: 'all', label: 'Any' }, ...(['1', '2', '3', '4', '5'] as const).map((n) => ({ value: n, label: n }))]} />
-        </div>
-        <p className="text-xs text-ink-3">{items.length} challenges · difficulty 1 (gentle) to 5 (demanding)</p>
-        <ul className="divide-y divide-line rounded-xl border border-line">
-          {items.map((i) => {
-            const taken = excluded.has(i.id);
-            const missing = i.equipment.filter((e) => !has.has(e));
-            return (
-              <li key={i.id}>
-                <button type="button" disabled={taken} onClick={() => onPick(i.id)} className={clsx('flex w-full items-start gap-3 px-3.5 py-3 text-left transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-45', i.id === current && 'bg-slate-soft')}>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-2 text-[14px]">
-                      {i.title}
-                      {i.id === current && <Badge tone="info">Current</Badge>}
-                      {taken && <Badge>In plan</Badge>}
-                    </span>
-                    <span className="mt-0.5 block text-[12.5px] leading-snug text-ink-2">{i.objective}</span>
-                    <span className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11.5px] text-ink-3">
-                      <span>{i.category}</span>
-                      <Difficulty value={i.difficulty} />
-                      <span>~{fmtHours(i.estimatedMinutes)}</span>
-                      {missing.length > 0 && <span className="text-warn">needs equipment</span>}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </Dialog>
+    <div className="scrollbar-none -mx-1 flex max-w-full items-center gap-2 overflow-x-auto px-1">
+      <Segmented label="Interest" size="sm" value={theme} onChange={setTheme} options={[{ value: 'all' as const, label: 'All' }, ...THEMES.map((t) => ({ value: t.id, label: t.label }))]} />
+      <Segmented label="Difficulty" size="sm" value={level} onChange={setLevel} options={[{ value: 'all', label: 'Any' }, ...(['1', '2', '3', '4', '5'] as const).map((n) => ({ value: n, label: n }))]} />
+    </div>
   );
 }

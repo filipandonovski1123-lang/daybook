@@ -1,4 +1,7 @@
+import { REST_ID } from '../domain/planner';
 import type { Challenge, ChallengeTheme, Criterion, MetricField, PbKey, ToolId } from '../domain/types';
+
+export { REST_ID };
 
 /**
  * The "Signature 30": the hand-built 30-day program, ordered easiest to hardest. These are also
@@ -36,7 +39,30 @@ export const EQUIPMENT: Record<string, string> = {
 };
 
 /** A reusable challenge definition. A plan places library items on days 1…N. */
-export type LibraryItem = Omit<Challenge, 'id' | 'day' | 'updatedAt' | 'libraryId'> & { id: string; theme: ChallengeTheme };
+export type LibraryItem = Omit<Challenge, 'id' | 'day' | 'updatedAt' | 'libraryId' | 'kind'> & { id: string; theme: ChallengeTheme };
+
+
+export const REST_ITEM: LibraryItem = {
+  id: REST_ID,
+  theme: 'wellbeing',
+  title: 'Rest & catch-up day',
+  category: 'Recovery',
+  difficulty: 1,
+  estimatedMinutes: 30,
+  objective: 'Recover, or catch up on a challenge you missed.',
+  description: 'No new challenge today. Rest properly, or use the time to finish something you missed or attempted. Rest days never count as missed.',
+  bonus: null,
+  preparation: ['Look back at the week: anything missed or only attempted?', 'Decide: proper rest, or one catch-up'],
+  equipment: [],
+  learningPlan: ['Keep your daily habits going', 'If you catch up, reschedule that challenge to today and do it', 'Otherwise rest: sleep, walk, see people'],
+  safety: [],
+  metrics: [],
+  criteria: [],
+  pbKeys: [],
+  tools: [],
+  evidence: { enabled: false, accept: '', label: '' },
+  stretchGoal: null,
+};
 
 /** Stable keys for the Signature 30, in day order. Challenge-specific logic (derived values, tools) keys off these. */
 export const SIGNATURE_KEYS = [
@@ -53,7 +79,7 @@ const THEME_FOR_CATEGORY: Record<string, ChallengeTheme> = {
   Debate: 'social', 'Public Speaking': 'social', 'Mental Speed': 'mind', Chess: 'mind', 'Personal Best': 'practical', 'Puzzle Mastery': 'mind',
 };
 
-type Seed = Omit<Challenge, 'id' | 'libraryId' | 'updatedAt' | 'evidence' | 'stretchGoal' | 'safety' | 'tools' | 'pbKeys' | 'metrics' | 'criteria' | 'bonus' | 'equipment'> & {
+type Seed = Omit<Challenge, 'id' | 'libraryId' | 'kind' | 'updatedAt' | 'evidence' | 'stretchGoal' | 'safety' | 'tools' | 'pbKeys' | 'metrics' | 'criteria' | 'bonus' | 'equipment'> & {
   bonus?: string;
   equipment?: string[];
   safety?: string[];
@@ -685,7 +711,7 @@ export const dayId = (day: number) => `day-${String(day).padStart(2, '0')}`;
 /** Place a library item on a program day. */
 export function instantiate(item: LibraryItem, day: number, now: number = Date.now()): Challenge {
   const { id, theme: _theme, ...rest } = item;
-  return { ...structuredClone(rest), id: dayId(day), day, libraryId: id, updatedAt: now };
+  return { ...structuredClone(rest), id: dayId(day), day, libraryId: id, kind: id === REST_ID ? 'rest' : 'challenge', updatedAt: now };
 }
 
 /** The Signature 30 as a ready-made plan (also the default seed before onboarding). */

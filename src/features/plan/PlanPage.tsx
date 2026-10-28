@@ -24,11 +24,13 @@ export function PlanPage() {
     length: program?.length ?? data.challenges.length,
     mode: program?.mode ?? 'signature',
     themes: program?.themes ?? [],
+    curve: program?.curve ?? 'steady',
+    restEvery: program?.restEvery ?? 0,
     plan: data.challenges.map((c) => challengeKey(c)),
     seed: Math.floor(Math.random() * 1e9),
   }));
   const [confirm, setConfirm] = useState(false);
-  const save = useAction(() => replacePlan(draft.plan, { mode: draft.mode, themes: draft.themes }), { success: 'Plan saved.' });
+  const save = useAction(() => replacePlan(draft.plan, { mode: draft.mode, themes: draft.themes, curve: draft.curve, restEvery: draft.restEvery }), { success: 'Plan saved.' });
   const swap = useAction((day: number, id: string) => swapDay(day, id), { success: 'Day swapped.' });
   if (!program) return null;
   const current = data.challenges.map((c) => challengeKey(c));
@@ -47,7 +49,7 @@ export function PlanPage() {
           <p className="mb-5 text-sm leading-relaxed text-ink-2">Nothing has been logged yet, so you can change everything — length, style and individual days.</p>
           <PlanBuilder draft={draft} onChange={setDraft} equipment={data.settings.equipment} startDate={program.startDate} />
           <div className="sticky bottom-[calc(68px+env(safe-area-inset-bottom))] -mx-2 mt-6 flex justify-end gap-2 rounded-xl border border-line bg-surface/95 p-2 shadow-pop backdrop-blur md:bottom-4">
-            <Button variant="ghost" disabled={!changed} onClick={() => setDraft({ ...draft, plan: current, length: program.length, mode: program.mode, themes: program.themes })}>
+            <Button variant="ghost" disabled={!changed} onClick={() => setDraft({ ...draft, plan: current, length: program.length, mode: program.mode, themes: program.themes, curve: program.curve, restEvery: program.restEvery })}>
               Reset
             </Button>
             <Button variant="primary" disabled={!changed} busy={save.busy} onClick={() => setConfirm(true)}>

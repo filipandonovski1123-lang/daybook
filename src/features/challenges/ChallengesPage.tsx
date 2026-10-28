@@ -19,9 +19,10 @@ const CIRCLE: Record<DisplayStatus, string> = {
   upcoming: 'bg-surface-3 text-ink-2',
   missed: 'bg-surface text-danger border border-danger/45',
   rescheduled: 'bg-surface text-ink-2 border border-dashed border-line-strong',
+  rest: 'bg-transparent text-ink-3 border border-dotted border-line-strong',
 };
 
-const LEGEND_ORDER: DisplayStatus[] = ['completed', 'available', 'upcoming', 'in_progress', 'attempted', 'missed', 'rescheduled'];
+const LEGEND_ORDER: DisplayStatus[] = ['completed', 'available', 'upcoming', 'in_progress', 'attempted', 'missed', 'rescheduled', 'rest'];
 const LEGEND_LABEL: Partial<Record<DisplayStatus, string>> = { available: 'Today' };
 
 const monthKey = (d: IsoDate) => d.slice(0, 7);

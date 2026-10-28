@@ -54,6 +54,9 @@ export const MAX_PROGRAM_DAYS = 100;
 export const challengeTheme = z.enum(['mind', 'body', 'creative', 'social', 'practical', 'wellbeing']);
 export type ChallengeTheme = z.infer<typeof challengeTheme>;
 
+export const difficultyCurve = z.enum(['gentle', 'steady', 'steep']);
+export type DifficultyCurve = z.infer<typeof difficultyCurve>;
+
 export const programSchema = z.object({
   id: z.literal('program'),
   name: z.string(),
@@ -65,6 +68,10 @@ export const programSchema = z.object({
   /** signature = the hand-built 30; auto = generated from interests; the user may swap days either way. */
   mode: z.enum(['signature', 'auto']).default('signature'),
   themes: z.array(challengeTheme).default([]),
+  /** How quickly difficulty rises across the plan. */
+  curve: difficultyCurve.default('steady'),
+  /** Insert a rest / catch-up day every N days (0 = none). */
+  restEvery: z.number().int().min(0).max(14).default(0),
   /** Set once the user has actually begun (first started/completed challenge or start date passed). */
   startedAt: timestamp.nullable(),
   history: z.array(
@@ -141,6 +148,8 @@ export const challengeSchema = z.object({
   day: z.number().int().min(1).max(MAX_PROGRAM_DAYS),
   /** The library entry this day was created from (drives challenge-specific measurements). */
   libraryId: z.string().nullable().default(null),
+  /** Rest / catch-up days carry no challenge and never count as missed. */
+  kind: z.enum(['challenge', 'rest']).default('challenge'),
   title: z.string().min(1).max(120),
   category: z.string().min(1).max(60),
   difficulty: z.number().int().min(1).max(5),
@@ -170,6 +179,23 @@ export const challengeSchema = z.object({
 });
 export type Challenge = z.infer<typeof challengeSchema>;
 
+/** A challenge the user wrote themselves; usable in plans like any library challenge. */
+export const customChallengeSchema = z.object({
+  id: z.string().regex(/^custom:/),
+  title: z.string().trim().min(1).max(120),
+  category: z.string().trim().min(1).max(60),
+  theme: challengeTheme,
+  difficulty: z.number().int().min(1).max(5),
+  estimatedMinutes: z.number().int().min(5).max(1440),
+  objective: z.string().trim().min(1).max(500),
+  description: z.string().max(2000),
+  preparation: z.array(z.string().max(300)).max(30),
+  learningPlan: z.array(z.string().max(300)).max(30),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type CustomChallenge = z.infer<typeof customChallengeSchema>;
+
 export const storedStatus = z.enum(['not_started', 'in_progress', 'paused', 'completed', 'attempted']);
 export type StoredStatus = z.infer<typeof storedStatus>;
 
@@ -181,7 +207,8 @@ export type DisplayStatus =
   | 'completed'
   | 'attempted'
   | 'missed'
-  | 'rescheduled';
+  | 'rescheduled'
+  | 'rest';
 
 export const metricValue = z.union([z.number(), z.string(), z.boolean(), z.array(z.string()), z.null()]);
 export type MetricValue = z.infer<typeof metricValue>;

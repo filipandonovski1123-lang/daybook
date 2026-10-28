@@ -4,6 +4,7 @@ import {
   attemptSchema,
   challengeRevisionSchema,
   challengeSchema,
+  customChallengeSchema,
   evidenceMetaSchema,
   habitEntrySchema,
   habitSchema,
@@ -41,6 +42,7 @@ export const backupSchema = z.object({
     achievements: z.array(achievementSchema),
     notificationLog: z.array(notificationLogSchema).optional().default([]),
     timers: z.array(timerStateSchema).optional().default([]),
+    customChallenges: z.array(customChallengeSchema).optional().default([]),
   }),
 });
 export type Backup = z.infer<typeof backupSchema>;
@@ -87,6 +89,7 @@ export async function exportData(includeFiles: boolean, now = Date.now()): Promi
       achievements: await db.achievements.toArray(),
       notificationLog: [],
       timers: await db.timers.toArray(),
+      customChallenges: await db.customChallenges.toArray(),
     },
   };
 }
@@ -157,6 +160,7 @@ export async function importData(backup: Backup): Promise<void> {
     await db.reminders.bulkAdd(d.reminders);
     await db.achievements.bulkAdd(d.achievements);
     await db.timers.bulkAdd(d.timers);
+    await db.customChallenges.bulkAdd(d.customChallenges);
   });
 }
 

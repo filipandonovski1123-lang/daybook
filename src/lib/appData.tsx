@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { UserError } from '../db/actions';
 import { db } from '../db/db';
 import { todayIn } from '../domain/dates';
-import type { Achievement, Attempt, Challenge, ChallengeProgress, EvidenceMeta, Habit, HabitEntry, IsoDate, Program, Reflection, Reminder, Settings } from '../domain/types';
+import type { Achievement, CustomChallenge, Attempt, Challenge, ChallengeProgress, EvidenceMeta, Habit, HabitEntry, IsoDate, Program, Reflection, Reminder, Settings } from '../domain/types';
 import { useToast } from './toast';
 
 export interface AppData {
@@ -18,12 +18,13 @@ export interface AppData {
   reflections: Reflection[];
   reminders: Reminder[];
   achievements: Achievement[];
+  customChallenges: CustomChallenge[];
 }
 
 async function load(): Promise<AppData | null> {
   const settings = await db.settings.get('settings');
   if (!settings) return null;
-  const [program, challenges, progress, habits, entries, attempts, evidence, reflections, reminders, achievements] = await Promise.all([
+  const [program, challenges, progress, habits, entries, attempts, evidence, reflections, reminders, achievements, customChallenges] = await Promise.all([
     db.program.get('program'),
     db.challenges.orderBy('day').toArray(),
     db.progress.toArray(),
@@ -34,6 +35,7 @@ async function load(): Promise<AppData | null> {
     db.reflections.toArray(),
     db.reminders.toArray(),
     db.achievements.toArray(),
+    db.customChallenges.orderBy('updatedAt').reverse().toArray(),
   ]);
   return {
     settings,
@@ -47,6 +49,7 @@ async function load(): Promise<AppData | null> {
     reflections,
     reminders: reminders.sort((a, b) => a.time.localeCompare(b.time)),
     achievements,
+    customChallenges,
   };
 }
 

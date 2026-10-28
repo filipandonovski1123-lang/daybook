@@ -32,6 +32,8 @@ async function freshProgram(startOffset: number) {
     plan: [...SIGNATURE_PLAN],
     mode: 'signature',
     themes: [],
+    curve: 'steady',
+    restEvery: 0,
   });
   return { today: t, start };
 }
@@ -322,7 +324,53 @@ describe('v3 migration (program length and library links)', () => {
     expect(p?.length).toBe(30);
     expect(p?.mode).toBe('signature');
     expect((await db3.challenges.get('day-02'))?.libraryId).toBe('speed-reading');
+    // v4 defaults
+    expect(p?.curve).toBe('steady');
+    expect(p?.restEvery).toBe(0);
+    expect((await db3.challenges.get('day-02'))?.kind).toBe('challenge');
+    expect(await db3.customChallenges.count()).toBe(0);
     db3.close();
     await Dexie.delete(name);
+  });
+});
+
+describe('custom challenges and rest days in plans', () => {
+  it('creates a custom challenge, uses it in a plan with rest days, and protects it from deletion', async () => {
+    const { generatePlan, REST_ID } = await import('../domain/planner');
+    const { LIBRARY } = await import('../data/library');
+    await freshProgram(0);
+    const mine = await A.saveCustomChallenge({ title: 'Learn my favourite song on ukulele', category: 'Music', theme: 'creative', difficulty: 3, estimatedMinutes: 90, objective: 'Play it all the way through', description: '', preparation: ['Tune the ukulele', ''], learningPlan: [] });
+    expect(mine.id).toMatch(/^custom:/);
+    expect(mine.preparation).toEqual(['Tune the ukulele']);
+    await expect(A.saveCustomChallenge({ ...mine, title: '' }, mine.id)).rejects.toThrow();
+
+    const plan = generatePlan(LIBRARY, { length: 14, themes: [], equipment: [], seed: 4, restEvery: 7 });
+    expect(plan[6]).toBe(REST_ID);
+    await A.replacePlan(plan, { mode: 'auto', themes: [], curve: 'gentle', restEvery: 7 });
+    expect((await db.challenges.get('day-07'))?.kind).toBe('rest');
+    expect((await db.program.get('program'))?.curve).toBe('gentle');
+
+    await A.swapDay(3, mine.id);
+    expect((await db.challenges.get('day-03'))?.title).toBe('Learn my favourite song on ukulele');
+    await expect(A.deleteCustomChallenge(mine.id)).rejects.toThrow(/Day 3/);
+    // A rest day can become a challenge, and a challenge day can become rest.
+    await A.swapDay(7, LIBRARY.find((i) => !plan.includes(i.id))!.id);
+    expect((await db.challenges.get('day-07'))?.kind).toBe('challenge');
+    await A.swapDay(3, REST_ID);
+    expect((await db.challenges.get('day-03'))?.kind).toBe('rest');
+    await A.deleteCustomChallenge(mine.id);
+    expect(await db.customChallenges.count()).toBe(0);
+  });
+
+  it('round-trips custom challenges through backup', async () => {
+    await freshProgram(0);
+    await A.saveCustomChallenge({ title: 'Mine', category: 'Me', theme: 'mind', difficulty: 2, estimatedMinutes: 30, objective: 'Do it', description: '', preparation: [], learningPlan: [] });
+    const { exportData, importData, parseBackup } = await import('./backup');
+    const parsed = parseBackup(JSON.stringify(await exportData(false)));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    await db.customChallenges.clear();
+    await importData(parsed.backup);
+    expect(await db.customChallenges.count()).toBe(1);
   });
 });

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { BookOpen, CalendarDays, ChartNoAxesColumn, Ellipsis, LayoutGrid, ListChecks, NotebookPen, Settings as SettingsIcon, Target } from 'lucide-react';
+import { BookOpen, Library as LibraryIcon, CalendarDays, ChartNoAxesColumn, Ellipsis, LayoutGrid, ListChecks, NotebookPen, Settings as SettingsIcon, Target } from 'lucide-react';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 import { syncAchievements } from '../db/actions';
@@ -59,7 +59,7 @@ export function Shell({ children }: { children: ReactNode }) {
     mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
 
-  const more = ['/more', '/habits', '/settings', '/reflection', '/tools', '/plan'].some((p) => location.pathname.startsWith(p));
+  const more = ['/more', '/habits', '/settings', '/reflection', '/tools', '/plan', '/library', '/summary'].some((p) => location.pathname.startsWith(p));
   const calendar = location.pathname.startsWith('/challenge');
   const backdrop = BACKDROP_FOR.find(([p]) => location.pathname.startsWith(p))?.[1];
 
@@ -83,6 +83,9 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <nav aria-label="Secondary" className="mt-auto flex flex-col gap-0.5">
+          <NavLink to="/library" className={({ isActive }) => clsx('flex items-center gap-3 rounded-md px-2.5 py-2 text-[13.5px]', isActive ? 'bg-surface-2 text-ink' : 'text-ink-2 hover:text-ink')}>
+            <LibraryIcon className="size-[17px]" strokeWidth={1.6} aria-hidden /> Library
+          </NavLink>
           <NavLink to="/tools" className={({ isActive }) => clsx('flex items-center gap-3 rounded-md px-2.5 py-2 text-[13.5px]', isActive ? 'bg-surface-2 text-ink' : 'text-ink-2 hover:text-ink')}>
             <BookOpen className="size-[17px]" strokeWidth={1.6} aria-hidden /> Tools
           </NavLink>

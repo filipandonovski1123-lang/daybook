@@ -10,6 +10,10 @@ No account, no server, no analytics. Everything is stored in your browser on you
 - **Length:** 3–100 days (presets 7 / 14 / 21 / 30 / 60 / 90).
 - **Choose for me:** `src/domain/planner.ts` builds a plan that ramps from difficulty 1 to 5, prefers the chosen interests and owned equipment, avoids repeating a category on consecutive days, and is sorted so no day is easier than the one before. Shuffle picks a new set.
 - **Signature 30:** the original hand-built 30-day program.
+- **Difficulty curve:** gentle, steady or steep.
+- **Rest days:** optional rest / catch-up day every 5th or 7th day (never the last day); rest days never count as missed.
+- **Your own challenges:** create, edit and delete them in the Library and swap them into any day.
+- **Summary:** `/#/summary` recaps the program and exports a shareable 1080×1350 image.
 - **Swapping:** any day can be swapped for another library challenge until something is logged against it. The whole plan, including its length, can be rebuilt until anything at all is logged.
 
 ## Run it

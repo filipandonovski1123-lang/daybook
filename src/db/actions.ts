@@ -1,5 +1,6 @@
 import { buildChallenges, dayId, instantiate } from '../data/challenges';
-import { getLibraryItem } from '../data/library';
+import { customToItem, getLibraryItem, type LibraryItem } from '../data/library';
+import { REST_ID } from '../domain/planner';
 import { buildHabits } from '../data/habits';
 import { addDays, detectTimeZone, isValidIso, isValidTimeZone, todayIn } from '../domain/dates';
 import { entryId, isPlannedOn, statusFor, type EntryInput } from '../domain/habits';
@@ -9,7 +10,10 @@ import {
   habitSchema,
   MAX_PROGRAM_DAYS,
   MIN_PROGRAM_DAYS,
+  customChallengeSchema,
   type ChallengeTheme,
+  type CustomChallenge,
+  type DifficultyCurve,
   type Achievement,
   type Attempt,
   type Challenge,
@@ -108,23 +112,37 @@ export interface OnboardingInput {
   plan: string[];
   mode: Program['mode'];
   themes: ChallengeTheme[];
+  curve: DifficultyCurve;
+  restEvery: number;
+}
+
+/** Look up a challenge by id: built-in, rest day, or one the user made. */
+export async function resolveLibraryItem(id: string): Promise<LibraryItem | undefined> {
+  const builtIn = getLibraryItem(id);
+  if (builtIn) return builtIn;
+  const custom = id.startsWith('custom:') ? await db.customChallenges.get(id) : undefined;
+  return custom ? customToItem(custom) : undefined;
 }
 
 /** Turn a list of library ids into day rows. Throws on unknown ids or a bad length. */
-function planToChallenges(plan: readonly string[], now: number): Challenge[] {
+async function planToChallenges(plan: readonly string[], now: number): Promise<Challenge[]> {
   if (plan.length < MIN_PROGRAM_DAYS || plan.length > MAX_PROGRAM_DAYS) throw new UserError(`A program must be ${MIN_PROGRAM_DAYS}–${MAX_PROGRAM_DAYS} days.`);
-  if (new Set(plan).size !== plan.length) throw new UserError('Each challenge can only appear once in a plan.');
-  return plan.map((id, i) => {
-    const item = getLibraryItem(id);
+  const real = plan.filter((id) => id !== REST_ID);
+  if (new Set(real).size !== real.length) throw new UserError('Each challenge can only appear once in a plan.');
+  if (real.length === 0) throw new UserError('A plan needs at least one challenge.');
+  const out: Challenge[] = [];
+  for (const [i, id] of plan.entries()) {
+    const item = await resolveLibraryItem(id);
     if (!item) throw new UserError('That challenge is no longer available. Pick another.');
-    return instantiate(item, i + 1, now);
-  });
+    out.push(instantiate(item, i + 1, now));
+  }
+  return out;
 }
 
 export async function completeOnboarding(input: OnboardingInput, now = Date.now()): Promise<void> {
   if (!isValidIso(input.startDate)) throw new UserError('Choose a valid start date.');
   if (!isValidTimeZone(input.timezone)) throw new UserError('Unknown timezone.');
-  const challenges = planToChallenges(input.plan, now);
+  const challenges = await planToChallenges(input.plan, now);
   await db.transaction('rw', [db.settings, db.program, db.habits, db.reminders, db.challenges, db.progress], async () => {
     const s = await requireSettings();
     await db.settings.put({
@@ -148,6 +166,8 @@ export async function completeOnboarding(input: OnboardingInput, now = Date.now(
       length: challenges.length,
       mode: input.mode,
       themes: input.themes,
+      curve: input.curve,
+      restEvery: input.restEvery,
       startedAt: existing?.startedAt ?? null,
       history: existing?.history ?? [],
     });
@@ -224,15 +244,15 @@ async function planHasActivity(): Promise<boolean> {
  * Replace the whole plan (and with it the program length). Only before anything has been logged —
  * afterwards individual future days can still be swapped.
  */
-export async function replacePlan(plan: string[], opts: { mode: Program['mode']; themes: ChallengeTheme[] }, now = Date.now()): Promise<void> {
-  const challenges = planToChallenges(plan, now);
+export async function replacePlan(plan: string[], opts: { mode: Program['mode']; themes: ChallengeTheme[]; curve?: DifficultyCurve; restEvery?: number }, now = Date.now()): Promise<void> {
+  const challenges = await planToChallenges(plan, now);
   if (await planHasActivity()) throw new UserError('You’ve already logged progress, so the plan can’t be rebuilt. Swap individual upcoming days instead.');
   await db.transaction('rw', [db.program, db.challenges, db.progress], async () => {
     const p = await requireProgram();
     await db.challenges.clear();
     await db.challenges.bulkAdd(challenges);
     await db.progress.clear();
-    await db.program.put({ ...p, length: challenges.length, name: `${challenges.length}-Day Challenge`, endDate: endDateFor(p.startDate, challenges.length), mode: opts.mode, themes: opts.themes });
+    await db.program.put({ ...p, length: challenges.length, name: `${challenges.length}-Day Challenge`, endDate: endDateFor(p.startDate, challenges.length), mode: opts.mode, themes: opts.themes, curve: opts.curve ?? p.curve ?? 'steady', restEvery: opts.restEvery ?? p.restEvery ?? 0 });
   });
 }
 
@@ -246,20 +266,46 @@ export async function canSwapDay(day: number): Promise<boolean> {
 
 /** Put a different library challenge on one day. The old definition is kept as a revision. */
 export async function swapDay(day: number, libraryId: string, now = Date.now()): Promise<void> {
-  const item = getLibraryItem(libraryId);
+  const item = await resolveLibraryItem(libraryId);
   if (!item) throw new UserError('That challenge isn’t available.');
   if (!(await canSwapDay(day))) throw new UserError('This day already has progress logged, so it can’t be swapped.');
   const id = dayId(day);
   await db.transaction('rw', [db.challenges, db.revisions, db.progress], async () => {
     const current = await db.challenges.get(id);
     if (!current) throw new UserError('Day not found.');
-    const dupe = (await db.challenges.toArray()).find((c) => c.libraryId === libraryId && c.id !== id);
+    const dupe = libraryId === REST_ID ? undefined : (await db.challenges.toArray()).find((c) => c.libraryId === libraryId && c.id !== id);
     if (dupe) throw new UserError(`That challenge is already on Day ${dupe.day}.`);
     await db.revisions.add({ id: newId('rev'), challengeId: id, at: now, previous: current });
     await db.challenges.put(instantiate(item, day, now));
     // Preparation ticks and notes belonged to the old challenge.
     await db.progress.delete(id);
   });
+}
+
+// ---------------------------------------------------------------- your own challenges
+
+export type CustomChallengeInput = Omit<CustomChallenge, 'id' | 'createdAt' | 'updatedAt'>;
+
+export async function saveCustomChallenge(input: CustomChallengeInput, id: string | null = null, now = Date.now()): Promise<CustomChallenge> {
+  const existing = id ? await db.customChallenges.get(id) : undefined;
+  const parsed = customChallengeSchema.safeParse({
+    ...input,
+    preparation: input.preparation.map((s) => s.trim()).filter(Boolean),
+    learningPlan: input.learningPlan.map((s) => s.trim()).filter(Boolean),
+    id: existing?.id ?? `custom:${newId('c').slice(2)}`,
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+  });
+  if (!parsed.success) throw new UserError(parsed.error.issues[0]?.message ?? 'Check the challenge details.');
+  await db.customChallenges.put(parsed.data);
+  return parsed.data;
+}
+
+/** Remove a user-made challenge. Refused while it's in the plan, so no day loses its definition. */
+export async function deleteCustomChallenge(id: string): Promise<void> {
+  const used = await db.challenges.filter((c) => c.libraryId === id).first();
+  if (used) throw new UserError(`It’s on Day ${used.day} of your plan. Swap that day first.`);
+  await db.customChallenges.delete(id);
 }
 
 // ---------------------------------------------------------------- challenge progress

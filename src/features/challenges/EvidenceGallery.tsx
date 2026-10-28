@@ -7,7 +7,7 @@ import { errorMessage, useApp } from '../../lib/appData';
 import { useToast } from '../../lib/toast';
 
 /** Object URL for a stored file, revoked on unmount. Bytes are loaded lazily per file. */
-function useEvidenceUrl(meta: EvidenceMeta | null): string | null {
+export function useEvidenceUrl(meta: EvidenceMeta | null): string | null {
   const [url, setUrl] = useState<string | null>(null);
   const id = meta?.id;
   const mime = meta?.mime;

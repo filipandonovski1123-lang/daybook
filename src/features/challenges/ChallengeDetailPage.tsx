@@ -9,6 +9,7 @@ import { challengeKey } from '../../data/library';
 import { setNotes, setSelfAssessment, swapDay, toggleCriterion, togglePrep } from '../../db/actions';
 import { LibraryPicker } from '../plan/PlanBuilder';
 import { useDayLocked } from '../plan/PlanPage';
+import { RestDayPanel } from '../today/RestDay';
 import { checkCompletion, num, personalBests } from '../../domain/criteria';
 import { formatDate, formatDuration, formatInstant } from '../../domain/dates';
 import { scheduledDateFor } from '../../domain/schedule';
@@ -160,6 +161,10 @@ function Detail({ challenge }: { challenge: Challenge }) {
         </div>
       </header>
 
+      {challenge.kind === 'rest' ? (
+        <RestDayPanel />
+      ) : (
+      <>
       {/* Today's progress */}
       <section className="mt-10" aria-labelledby="tp-title">
         <h2 id="tp-title" className="font-display text-[20px]">
@@ -200,6 +205,9 @@ function Detail({ challenge }: { challenge: Challenge }) {
         {tab === 'log' && <LogTab challenge={challenge} />}
         {tab === 'notes' && <NotesTab challenge={challenge} />}
       </div>
+
+      </>
+      )}
 
       <QuoteCard quote={quoteFor(challenge.day + 1)} scene="peaks" layout="overlay" className="mt-12 h-[150px]" />
       <EditChallengeDialog challenge={challenge} open={editOpen} onClose={() => setEditOpen(false)} />

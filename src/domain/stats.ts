@@ -15,6 +15,7 @@ export interface ChallengeCounts {
   available: number;
   rescheduled: number;
   remaining: number;
+  rest: number;
 }
 
 export function statusesFor(startDate: IsoDate, today: IsoDate, challenges: readonly Challenge[], progress: ProgressMap): Map<string, DisplayStatus> {
@@ -22,7 +23,7 @@ export function statusesFor(startDate: IsoDate, today: IsoDate, challenges: read
 }
 
 export function challengeCounts(statuses: ReadonlyMap<string, DisplayStatus>): ChallengeCounts {
-  const c: ChallengeCounts = { completed: 0, attempted: 0, missed: 0, inProgress: 0, upcoming: 0, available: 0, rescheduled: 0, remaining: 0 };
+  const c: ChallengeCounts = { completed: 0, attempted: 0, missed: 0, inProgress: 0, upcoming: 0, available: 0, rescheduled: 0, remaining: 0, rest: 0 };
   for (const s of statuses.values()) {
     if (s === 'completed') c.completed++;
     else if (s === 'attempted') c.attempted++;
@@ -31,8 +32,10 @@ export function challengeCounts(statuses: ReadonlyMap<string, DisplayStatus>): C
     else if (s === 'upcoming') c.upcoming++;
     else if (s === 'available') c.available++;
     else if (s === 'rescheduled') c.rescheduled++;
+    else if (s === 'rest') c.rest++;
   }
-  c.remaining = statuses.size - c.completed;
+  // Rest days aren't challenges: they never count as remaining or missed.
+  c.remaining = statuses.size - c.rest - c.completed;
   return c;
 }
 
@@ -81,7 +84,7 @@ export function weeklyStats(startDate: IsoDate, today: IsoDate, challenges: read
     let completed = 0;
     let attempted = 0;
     for (const c of challenges) {
-      if (c.day < firstDay || c.day > lastDay) continue;
+      if (c.day < firstDay || c.day > lastDay || c.kind === 'rest') continue;
       const date = scheduledDateFor(startDate, c.day);
       if (date > today) continue;
       due++;
@@ -116,6 +119,7 @@ export interface CategoryStat {
 export function categoryBreakdown(challenges: readonly Challenge[], progress: ProgressMap): CategoryStat[] {
   const map = new Map<string, CategoryStat>();
   for (const c of challenges) {
+    if (c.kind === 'rest') continue;
     const s = map.get(c.category) ?? { category: c.category, total: 0, completed: 0, attempted: 0 };
     s.total++;
     const st = progress.get(c.id)?.status;
@@ -230,7 +234,8 @@ export function deriveAchievements(args: {
   if (finished[6]) add('seven_attempted', finished[6].completedAt ?? 0, label(finished[6]));
   if (completed[9]) add('ten_completed', completed[9].completedAt ?? 0, label(completed[9]));
   const length = args.challenges.length || DEFAULT_PROGRAM_DAYS;
-  if (completed.length === length) {
+  const realChallenges = args.challenges.filter((c) => c.kind !== 'rest').length;
+  if (realChallenges > 0 && completed.length === realChallenges) {
     const last = completed[completed.length - 1];
     if (last) add('all_completed', last.completedAt ?? 0, label(last));
   }

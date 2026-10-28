@@ -4,11 +4,13 @@ import { Shell } from './components/Shell';
 import { ChallengeDetailPage, CurrentChallengeRedirect } from './features/challenges/ChallengeDetailPage';
 import { ChallengesPage } from './features/challenges/ChallengesPage';
 import { HabitsPage } from './features/habits/HabitsPage';
+import { LibraryPage } from './features/library/LibraryPage';
 import { MorePage } from './features/more/MorePage';
 import { Onboarding } from './features/onboarding/Onboarding';
 import { PlanPage } from './features/plan/PlanPage';
 import { ReflectionPage } from './features/reflection/ReflectionPage';
 import { SettingsPage } from './features/settings/SettingsPage';
+import { SummaryPage } from './features/summary/SummaryPage';
 import { TodayPage } from './features/today/TodayPage';
 import { AppDataProvider, useApp } from './lib/appData';
 import { CompletionMoment } from './lib/motion';
@@ -44,6 +46,8 @@ function Ready() {
               <Route path="/reflection" element={<ReflectionPage />} />
               <Route path="/more" element={<MorePage />} />
               <Route path="/plan" element={<PlanPage />} />
+              <Route path="/library" element={<LibraryPage />} />
+              <Route path="/summary" element={<SummaryPage />} />
               <Route path="/challenges/:id" element={<ChallengeDetailPage />} />
               <Route path="/habits" element={<HabitsPage />} />
               <Route path="/progress" element={<ProgressPage />} />

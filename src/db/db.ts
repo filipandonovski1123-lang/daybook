@@ -7,6 +7,7 @@ import type {
   Challenge,
   ChallengeProgress,
   ChallengeRevision,
+  CustomChallenge,
   EvidenceFile,
   EvidenceMeta,
   Habit,
@@ -20,7 +21,7 @@ import type {
 } from '../domain/types';
 
 /** Bump with a new `this.version(n)` block (and an `.upgrade()` if data needs reshaping). */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export class ChallengeDB extends Dexie {
   settings!: EntityTable<Settings, 'id'>;
@@ -38,6 +39,7 @@ export class ChallengeDB extends Dexie {
   achievements!: EntityTable<Achievement, 'id'>;
   notificationLog!: EntityTable<NotificationLog, 'id'>;
   timers!: EntityTable<TimerState, 'id'>;
+  customChallenges!: EntityTable<CustomChallenge, 'id'>;
 
   constructor(name = 'thirty-day-challenge') {
     super(name);
@@ -100,6 +102,18 @@ export class ChallengeDB extends Dexie {
           if (c.libraryId === undefined) c.libraryId = c.day ? (SIGNATURE_KEYS[c.day - 1] ?? null) : null;
         });
       });
+    // v4: user-made challenges, difficulty curves and rest days.
+    this.version(4)
+      .stores({ customChallenges: 'id, updatedAt' })
+      .upgrade(async (tx) => {
+        await tx.table('program').toCollection().modify((p: Partial<Program>) => {
+          p.curve ??= 'steady';
+          p.restEvery ??= 0;
+        });
+        await tx.table('challenges').toCollection().modify((c: Partial<Challenge>) => {
+          c.kind ??= 'challenge';
+        });
+      });
   }
 }
 
@@ -121,6 +135,7 @@ export const ALL_TABLES = [
   'achievements',
   'notificationLog',
   'timers',
+  'customChallenges',
 ] as const;
 export type TableName = (typeof ALL_TABLES)[number];
 

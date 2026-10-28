@@ -10,6 +10,7 @@ import { addDays, DEFAULT_TIMEZONE, formatDate, isValidIso, isValidTimeZone, tod
 import { displayName } from '../../domain/habits';
 import { useAction, useApp } from '../../lib/appData';
 import { notificationSupport, requestPermission } from '../../lib/notifications';
+import { useLibrary } from '../../lib/library';
 import { buildPlan, newDraft, PlanBuilder, type PlanDraft } from '../plan/PlanBuilder';
 
 const STEPS = ['Welcome', 'Start date', 'Equipment', 'Challenges', 'Daily rhythm', 'Habits', 'Reminders', 'Mode'] as const;
@@ -38,8 +39,11 @@ export function Onboarding() {
     plan: [],
     mode: 'auto',
     themes: [],
+    curve: 'steady',
+    restEvery: 0,
   }));
-  const [draft, setDraft] = useState<PlanDraft>(() => newDraft(data.settings.equipment));
+  const lib = useLibrary();
+  const [draft, setDraft] = useState<PlanDraft>(() => newDraft(data.settings.equipment, lib.items));
   const cur = STEPS[step];
   const set = <K extends keyof OnboardingInput>(k: K, v: OnboardingInput[K]) => setForm((f) => ({ ...f, [k]: v }));
   const [permission, setPermission] = useState(notificationSupport().permission);
@@ -49,7 +53,7 @@ export function Onboarding() {
   const canNext = cur === 'Start date' ? !!form.startDate && !dateError && isValidTimeZone(form.timezone) : cur === 'Challenges' ? draft.plan.length >= 3 : true;
   const next = () => {
     // Equipment is known now, so build the suggested plan around it.
-    if (cur === 'Equipment' && draft.mode === 'auto') setDraft({ ...draft, plan: buildPlan(draft, form.equipment) });
+    if (cur === 'Equipment' && draft.mode === 'auto') setDraft({ ...draft, plan: buildPlan(draft, form.equipment, lib.items) });
     setStep((s) => s + 1);
   };
 
@@ -204,7 +208,7 @@ export function Onboarding() {
                 {cur === 'Start date' && !form.startDate ? 'Pick a date' : 'Continue'}
               </Button>
             ) : (
-              <Button variant="primary" busy={finish.busy} onClick={() => void finish.run({ ...form, plan: draft.plan, mode: draft.mode, themes: draft.themes })}>
+              <Button variant="primary" busy={finish.busy} onClick={() => void finish.run({ ...form, plan: draft.plan, mode: draft.mode, themes: draft.themes, curve: draft.curve, restEvery: draft.restEvery })}>
                 Start my program
               </Button>
             )}

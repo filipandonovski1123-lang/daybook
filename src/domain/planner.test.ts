@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { instantiate } from '../data/challenges';
 import { getLibraryItem, LIBRARY, SIGNATURE_PLAN } from '../data/library';
-import { generatePlan, sortByDifficulty, targetDifficulty } from './planner';
-import { challengeSchema } from './types';
+import { generatePlan, isRestDay, REST_ID, restCount, sortByDifficulty, stripRest, targetDifficulty, withRestDays } from './planner';
+import { displayStatus } from './schedule';
+import { challengeCounts } from './stats';
+import { longestStreak } from './summary';
+import { challengeSchema, type DisplayStatus, type HabitEntry } from './types';
 
 const DERIVED = ['baseWpm', 'finalWpm', 'accuracy', 'perfectUnder5', 'gamesPlayed', 'ratingChange', 'improvementAchieved', 'serveAccuracy'];
 
@@ -83,5 +86,58 @@ describe('plan generator', () => {
     expect(targetDifficulty(0, 1)).toBe(1);
     const sorted = sortByDifficulty([{ difficulty: 3, estimatedMinutes: 10 }, { difficulty: 1, estimatedMinutes: 90 }, { difficulty: 1, estimatedMinutes: 30 }]);
     expect(sorted.map((s) => s.estimatedMinutes)).toEqual([30, 90, 10]);
+  });
+});
+
+describe('difficulty curves and rest days', () => {
+  const avg = (ids: string[]) => {
+    const d = ids.filter((id) => id !== REST_ID).map((id) => getLibraryItem(id)!.difficulty);
+    return d.reduce((a, b) => a + b, 0) / d.length;
+  };
+
+  it('gentle plans are easier on average than steep ones', () => {
+    const opts = { length: 30, themes: [] as never[], equipment: [], seed: 11 };
+    const gentle = avg(generatePlan(LIBRARY, { ...opts, curve: 'gentle' }));
+    const steady = avg(generatePlan(LIBRARY, { ...opts, curve: 'steady' }));
+    const steep = avg(generatePlan(LIBRARY, { ...opts, curve: 'steep' }));
+    expect(gentle).toBeLessThan(steady);
+    expect(steady).toBeLessThan(steep);
+    expect(targetDifficulty(15, 31, 'gentle')).toBeLessThan(targetDifficulty(15, 31, 'steep'));
+  });
+
+  it('places a rest day every 7th day, never last, and keeps the exact length', () => {
+    for (const length of [7, 14, 21, 28, 30, 60]) {
+      const plan = generatePlan(LIBRARY, { length, themes: [], equipment: [], seed: length, restEvery: 7 });
+      expect(plan).toHaveLength(length);
+      plan.forEach((id, i) => expect(id === REST_ID, `${length}: day ${i + 1}`).toBe(isRestDay(i + 1, length, 7)));
+      expect(plan.at(-1)).not.toBe(REST_ID);
+      expect(plan.filter((id) => id === REST_ID)).toHaveLength(restCount(length, 7));
+    }
+  });
+
+  it('withRestDays and stripRest round-trip, and challenges still never get easier', () => {
+    const plan = generatePlan(LIBRARY, { length: 30, themes: [], equipment: [], seed: 2, restEvery: 5 });
+    const challenges = stripRest(plan);
+    expect(withRestDays(challenges, 5)).toEqual(plan);
+    const d = challenges.map((id) => getLibraryItem(id)!.difficulty);
+    for (let i = 1; i < d.length; i++) expect(d[i]!).toBeGreaterThanOrEqual(d[i - 1]!);
+    expect(withRestDays(SIGNATURE_PLAN, 7)).toHaveLength(34);
+  });
+
+  it('rest days show as rest, never missed, and are excluded from challenge counts', () => {
+    expect(displayStatus('2026-11-01', '2026-12-01', { day: 7, kind: 'rest' }, null)).toBe('rest');
+    const statuses = new Map<string, DisplayStatus>([['a', 'rest'], ['b', 'missed'], ['c', 'completed']]);
+    const counts = challengeCounts(statuses);
+    expect(counts.rest).toBe(1);
+    expect(counts.remaining).toBe(1);
+  });
+});
+
+describe('summary', () => {
+  it('finds the longest run of active days', () => {
+    const e = (date: string, status: HabitEntry['status'] = 'done'): HabitEntry => ({ id: date, habitId: 'h', date, status, value: null, text: '', extra: {}, notes: '', planned: true, updatedAt: 0 });
+    const entries = [e('2026-11-01'), e('2026-11-02'), e('2026-11-03'), e('2026-11-05'), e('2026-11-06', 'missed')];
+    expect(longestStreak(entries, [])).toBe(3);
+    expect(longestStreak([], [])).toBe(0);
   });
 });

@@ -1,12 +1,14 @@
-import { ChevronRight, List, ListChecks, NotebookPen, Settings, Target, Timer } from 'lucide-react';
+import { Award, ChevronRight, Library, List, ListChecks, NotebookPen, Settings, Target, Timer } from 'lucide-react';
 import { Link } from 'react-router';
 import { PageHeader } from '../../components/ui';
 
 const ITEMS = [
   { to: '/challenge', label: 'Today’s challenge', hint: 'Detail, measurements and evidence', icon: Target },
   { to: '/habits', label: 'Habits', hint: 'Weekly rotation, targets and history', icon: ListChecks },
+  { to: '/summary', label: 'Summary', hint: 'Your program at a glance — shareable', icon: Award },
   { to: '/reflection', label: 'Reflections', hint: 'Evening check-in and journal', icon: NotebookPen },
   { to: '/plan', label: 'Your plan', hint: 'Length, challenges and swapping days', icon: List },
+  { to: '/library', label: 'Library', hint: 'Browse every challenge and create your own', icon: Library },
   { to: '/calendar', label: 'All challenges', hint: 'Calendar and list view', icon: List },
   { to: '/tools', label: 'Tools', hint: 'Focus timer, tests and stopwatches', icon: Timer },
   { to: '/settings', label: 'Settings', hint: 'Reminders, Hard Mode, data', icon: Settings },

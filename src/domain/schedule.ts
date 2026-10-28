@@ -35,9 +35,10 @@ export function effectiveDate(startDate: IsoDate, challenge: Pick<Challenge, 'da
 export function displayStatus(
   startDate: IsoDate,
   today: IsoDate,
-  challenge: Pick<Challenge, 'day'>,
+  challenge: Pick<Challenge, 'day'> & Partial<Pick<Challenge, 'kind'>>,
   progress?: Pick<ChallengeProgress, 'status' | 'rescheduledTo'> | null,
 ): DisplayStatus {
+  if (challenge.kind === 'rest') return 'rest';
   const s = progress?.status ?? 'not_started';
   if (s === 'completed') return 'completed';
   if (s === 'attempted') return 'attempted';
@@ -61,4 +62,5 @@ export const STATUS_LABEL: Record<DisplayStatus, string> = {
   attempted: 'Attempted',
   missed: 'Missed',
   rescheduled: 'Rescheduled',
+  rest: 'Rest day',
 };

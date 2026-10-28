@@ -17,6 +17,7 @@ import { habitGroupsFor, useProgramView, useStatusOf, type ProgramView } from '.
 import { ChallengeActions, StatusBadge } from '../challenges/shared';
 import { HabitRow } from '../habits/HabitRow';
 import { MissedAcknowledgement } from './MissedAcknowledgement';
+import { RestDayPanel } from './RestDay';
 
 export function TodayPage() {
   const { data, today } = useApp();
@@ -171,13 +172,21 @@ function Headline({ view, challenge, day, isToday }: { view: ProgramView; challe
         <h1 className="font-display text-[34px] leading-[1.08] md:text-[44px]">{view.counts.completed} of {view.length} completed.</h1>
         <p className="mt-3 max-w-md text-[14px] leading-relaxed text-ink-2">
           The {view.length} days are over{view.counts.attempted ? `, with ${view.counts.attempted} more honestly attempted` : ''}. Open challenges can still be finished — they’ll be recorded with their real dates.{' '}
-          <Link to="/progress" className="text-slate underline-offset-2 hover:underline">
-            Review your progress
+          <Link to="/summary" className="text-slate underline-offset-2 hover:underline">
+            See your summary
           </Link>
         </p>
       </div>
     );
   }
+  if (challenge.kind === 'rest')
+    return (
+      <div className="mt-3">
+        <h1 className="font-display text-[34px] leading-[1.08] md:text-[44px]">Rest & catch-up day</h1>
+        <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-ink-2">No new challenge today. Recover — or use the time to finish something you missed. Rest days never count as missed.</p>
+        {isToday && <RestDayPanel />}
+      </div>
+    );
   const status = view.statuses.get(challenge.id) ?? 'upcoming';
   const hoursLeft = (endOfDayEpoch(today, data.settings.timezone) - now) / 3_600_000;
   const nudge = isToday ? challengeNudge(status, data.settings.hardMode, challenge.day, hoursLeft) : null;
@@ -252,7 +261,8 @@ function Checklist({ date, challenge, isToday }: { date: IsoDate; challenge: Cha
   const groups = useMemo(() => habitGroupsFor(data.habits, date, data.settings.hideSensitiveOnToday), [data.habits, date, data.settings.hideSensitiveOnToday]);
   const adherence = dayAdherence(data.habits, data.entries, date);
   const challengeDone = challenge ? ['completed', 'attempted'].includes(data.progress.get(challenge.id)?.status ?? '') : false;
-  const total = adherence.planned + (challenge ? 1 : 0);
+  const counts = challenge !== null && challenge.kind !== 'rest';
+  const total = adherence.planned + (counts ? 1 : 0);
   const done = adherence.done + (challengeDone ? 1 : 0);
   const reflection = data.reflections.find((r) => r.date === date);
   const sections = [
@@ -276,7 +286,7 @@ function Checklist({ date, challenge, isToday }: { date: IsoDate; challenge: Cha
 
       {challenge && (
         <ul className="mt-2">
-          <ChallengeRow challenge={challenge} />
+          {challenge.kind === 'rest' ? <RestRow /> : <ChallengeRow challenge={challenge} />}
         </ul>
       )}
       {sections.map((s) =>
@@ -314,6 +324,18 @@ function Checklist({ date, challenge, isToday }: { date: IsoDate; challenge: Cha
   );
 }
 
+function RestRow() {
+  return (
+    <li className="flex min-h-[46px] items-center gap-3 py-1.5 text-ink-2">
+      <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-dotted border-line-strong" aria-hidden>
+        <MoonStar className="size-3" />
+      </span>
+      <span className="flex-1 text-[14px]">Rest & catch-up day</span>
+      <span className="text-[12px] text-ink-3">No challenge</span>
+    </li>
+  );
+}
+
 function ChallengeRow({ challenge }: { challenge: Challenge }) {
   const status = useStatusOf(challenge);
   const done = status === 'completed';
@@ -338,7 +360,8 @@ function ProgressSummary({ date, challenge, className }: { date: IsoDate; challe
   const view = useProgramView();
   const adherence = dayAdherence(data.habits, data.entries, date);
   const challengeDone = challenge ? ['completed', 'attempted'].includes(data.progress.get(challenge.id)?.status ?? '') : false;
-  const total = adherence.planned + (challenge ? 1 : 0);
+  const counts = challenge !== null && challenge.kind !== 'rest';
+  const total = adherence.planned + (counts ? 1 : 0);
   const done = adherence.done + (challengeDone ? 1 : 0);
   const pct = total ? Math.round((done / total) * 100) : 0;
   const streak = activeStreak(data.entries, [...data.progress.values()], today);
