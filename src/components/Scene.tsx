@@ -46,7 +46,7 @@ export function Scene({ kind, className }: { kind: SceneKind; className?: string
   if (photo !== 'ok') return null;
   return (
     <div className={clsx('relative overflow-hidden bg-surface-3', className)} aria-hidden>
-      <img src={PHOTO[kind]} alt="" className="absolute inset-0 size-full object-cover grayscale-[35%]" />
+      <img src={PHOTO[kind]} alt="" className={clsx('absolute inset-0 size-full object-cover', kind === 'coast' && 'object-[22%_center]')} />
     </div>
   );
 }
