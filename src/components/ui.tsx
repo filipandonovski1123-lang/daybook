@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { useDeferredMount } from '../lib/motion';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { forwardRef, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 
@@ -34,7 +35,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={type}
       disabled={disabled || busy}
       aria-busy={busy || undefined}
-      className={clsx('inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50', variants[variant], sizes[size], className)}
+      className={clsx('inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-medium transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100 disabled:opacity-50', variants[variant], sizes[size], className)}
       {...rest}
     >
       {busy ? <span className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden /> : icon}
@@ -272,10 +273,11 @@ export function Dialog({ open, onClose, title, children, footer, size = 'md' }: 
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}
-      className={clsx('m-auto max-h-[90dvh] w-[calc(100%-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-0 text-ink shadow-pop', size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg')}
+      className={clsx('sheet m-auto max-h-[90dvh] w-[calc(100%-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-0 text-ink shadow-pop', size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg')}
     >
       {open && (
         <div className="flex max-h-[90dvh] flex-col">
+          <span className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-line-strong sm:hidden" aria-hidden />
           <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
             <h2 id={titleId} className="font-display text-xl">
               {title}
@@ -329,7 +331,7 @@ export function Disclosure({ summary, children, defaultOpen = false, className, 
         </span>
         <ChevronDown className={clsx('size-4 text-ink-3 transition-transform', open && 'rotate-180')} aria-hidden />
       </button>
-      <div id={id} hidden={!open}>
+      <div id={id} hidden={!open} className="animate-fade">
         {children}
       </div>
     </div>
@@ -341,12 +343,13 @@ export function Disclosure({ summary, children, defaultOpen = false, className, 
 export function ProgressRing({ value, size = 64, stroke = 6, children, tone = 'accent', label }: { value: number; size?: number; stroke?: number; children?: ReactNode; tone?: 'accent' | 'success'; label: string }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const v = Math.max(0, Math.min(1, value));
+  // Sweeps up from empty on mount, then transitions between values.
+  const v = useDeferredMount(Math.max(0, Math.min(1, value)), 0);
   return (
     <div className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }} role="img" aria-label={label}>
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-3)" strokeWidth={stroke} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={tone === 'success' ? 'var(--success)' : 'var(--slate)'} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - v)} style={{ transition: 'stroke-dashoffset 500ms cubic-bezier(.2,.8,.2,1)' }} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={tone === 'success' ? 'var(--success)' : 'var(--slate)'} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - v)} style={{ transition: 'stroke-dashoffset 900ms var(--ease-out)' }} />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">{children}</div>
     </div>

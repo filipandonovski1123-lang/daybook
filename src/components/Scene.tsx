@@ -1,5 +1,6 @@
 import clsx from 'clsx';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { prefersReducedMotion } from '../lib/motion';
 
 /**
  * Editorial photography. Photos live in public/images/. If a photo hasn't been added, nothing is
@@ -41,12 +42,39 @@ export function usePhoto(kind: SceneKind): Probe {
   return useSyncExternalStore(subscribe, () => probes.get(kind) ?? 'loading', () => 'loading');
 }
 
-export function Scene({ kind, className }: { kind: SceneKind; className?: string }) {
+export function Scene({ kind, className, hero = false }: { kind: SceneKind; className?: string; hero?: boolean }) {
   const photo = usePhoto(kind);
+  const layer = useRef<HTMLDivElement>(null);
+
+  // Hero only: gentle parallax while it's on screen. Written straight to the style (no re-renders).
+  useEffect(() => {
+    if (!hero || photo !== 'ok' || prefersReducedMotion()) return;
+    const el = layer.current;
+    if (!el) return;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const rect = el.parentElement?.getBoundingClientRect();
+      if (!rect || rect.bottom < 0 || rect.top > window.innerHeight) return;
+      el.style.transform = `translate3d(0, ${Math.round(-rect.top * 0.12)}px, 0)`;
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [hero, photo]);
+
   if (photo !== 'ok') return null;
   return (
     <div className={clsx('relative overflow-hidden bg-surface-3', className)} aria-hidden>
-      <img src={PHOTO[kind]} alt="" className={clsx('absolute inset-0 size-full object-cover', kind === 'coast' && 'object-[22%_center]')} />
+      <div ref={layer} className={clsx('absolute inset-x-0 will-change-transform', hero ? '-top-[10%] h-[120%]' : 'inset-y-0')}>
+        <img src={PHOTO[kind]} alt="" className={clsx('size-full object-cover', kind === 'coast' && 'object-[22%_center]', hero && 'animate-hero')} />
+      </div>
     </div>
   );
 }

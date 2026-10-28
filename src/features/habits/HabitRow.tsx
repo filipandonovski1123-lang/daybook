@@ -100,7 +100,12 @@ export function HabitRow({ habit, date, unplanned = false, readOnly = false }: {
           disabled={log.busy || readOnly}
           className={clsx('relative flex size-[22px] shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors before:absolute before:-inset-2.5 before:content-[""] disabled:opacity-60', status ? STATUS_STYLE[status] : 'border-line-strong text-transparent hover:border-slate hover:text-slate/50')}
         >
-          {status === 'done' && <Check className="animate-check size-3" strokeWidth={3} />}
+          {status === 'done' && (
+            <>
+              <span className="animate-ping-once pointer-events-none absolute inset-0 rounded-full" aria-hidden />
+              <Check className="animate-check size-3" strokeWidth={3} />
+            </>
+          )}
           {status === 'partial' && <Minus className="size-3" strokeWidth={3} />}
           {status === 'rest' && <Moon className="size-3" />}
           {(status === 'missed' || status === 'skipped') && <Circle className="size-1.5" fill="currentColor" />}
@@ -108,7 +113,9 @@ export function HabitRow({ habit, date, unplanned = false, readOnly = false }: {
         </button>
         <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:cursor-default" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls={editorId} disabled={readOnly}>
           <span className="flex min-w-0 flex-1 items-center gap-2">
-            <span className={clsx('truncate text-[14px]', status === 'done' && 'text-ink-2')}>{name}</span>
+            <span className={clsx('strike truncate text-[14px]', status === 'done' && 'text-ink-2')} data-done={status === 'done'}>
+              {name}
+            </span>
             {habit.sensitive && <Lock className="size-3 shrink-0 text-ink-3" aria-label="Private" />}
             {unplanned && <Badge>Extra</Badge>}
           </span>

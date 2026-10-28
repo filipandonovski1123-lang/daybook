@@ -11,6 +11,7 @@ import { PROGRAM_DAYS, programDayFor } from '../../domain/schedule';
 import { activeStreak } from '../../domain/stats';
 import type { Challenge, IsoDate } from '../../domain/types';
 import { useApp, useNow } from '../../lib/appData';
+import { AnimatedNumber } from '../../lib/motion';
 import { useReminders } from '../../lib/reminderScheduler';
 import { habitGroupsFor, useProgramView, useStatusOf, type ProgramView } from '../../lib/selectors';
 import { ChallengeActions, StatusBadge } from '../challenges/shared';
@@ -20,10 +21,17 @@ import { MissedAcknowledgement } from './MissedAcknowledgement';
 export function TodayPage() {
   const { data, today } = useApp();
   const view = useProgramView();
-  const [viewDate, setViewDate] = useState<IsoDate | null>(null);
+  const [viewDate, setViewDateRaw] = useState<IsoDate | null>(null);
+  // Remember which way the user moved so the day content slides in from that side.
+  const [dir, setDir] = useState<'next' | 'prev' | null>(null);
   const hero = usePhoto('coast') === 'ok';
   if (!view) return null;
   const date = viewDate ?? today;
+  const setViewDate = (d: IsoDate | null) => {
+    setDir((d ?? today) > date ? 'next' : 'prev');
+    setViewDateRaw(d);
+  };
+  const slide = dir ? (dir === 'next' ? 'animate-slide-next' : 'animate-slide-prev') : '';
   const isToday = date === today;
   const day = programDayFor(view.startDate, date);
   const inProgram = day >= 1 && day <= PROGRAM_DAYS;
@@ -70,7 +78,9 @@ export function TodayPage() {
         </div>
       </div>
 
-      <Headline view={view} challenge={challenge} day={day} isToday={isToday} />
+      <div key={`h-${date}`} className={slide}>
+        <Headline view={view} challenge={challenge} day={day} isToday={isToday} />
+      </div>
 
       {isToday && (
         <div className="mt-5 space-y-3 empty:hidden">
@@ -82,9 +92,11 @@ export function TodayPage() {
 
       {/* Hero + overlapping checklist */}
       <div className="relative mt-6">
-        <Scene kind="coast" className="-mx-5 h-[210px] md:mx-0 md:h-[240px] md:rounded-xl" />
+        <Scene kind="coast" hero className="-mx-5 h-[210px] md:mx-0 md:h-[240px] md:rounded-xl" />
         <div className={clsx('relative md:grid md:grid-cols-[1.35fr_1fr] md:items-start md:gap-4', hero && '-mt-8 md:-mt-10 md:px-4')}>
-          <Checklist date={date} challenge={challenge} isToday={isToday} />
+          <div key={`c-${date}`} className={slide}>
+            <Checklist date={date} challenge={challenge} isToday={isToday} />
+          </div>
           <ProgressSummary date={date} challenge={challenge} className="hidden md:block" />
         </div>
       </div>
@@ -257,7 +269,7 @@ function Checklist({ date, challenge, isToday }: { date: IsoDate; challenge: Cha
           {isToday ? 'Today’s Checklist' : `${formatDate(date, 'short')} checklist`}
         </h2>
         <p className="tnum text-[13px] text-ink-3" aria-label={`${done} of ${total} done`}>
-          {done} / {total}
+          <AnimatedNumber value={done} /> / {total}
         </p>
       </div>
       {future && <p className="mt-1 text-xs text-ink-3">A preview — future days can’t be logged yet.</p>}
@@ -314,7 +326,7 @@ function ChallengeRow({ challenge }: { challenge: Challenge }) {
           {attempted && <Flag className="size-2.5" />}
           {status === 'in_progress' && <span className="size-2 rounded-full bg-slate" />}
         </span>
-        <span className={clsx('min-w-0 flex-1 truncate text-[14px]', done && 'text-ink-2')}>{challenge.title}</span>
+        <span className={clsx('strike min-w-0 flex-1 truncate text-[14px]', done && 'text-ink-2')} data-done={done}>{challenge.title}</span>
         <span className="shrink-0 text-[12px] text-ink-3">{status === 'in_progress' ? 'In progress' : status === 'completed' ? 'Done' : status === 'attempted' ? 'Attempted' : 'Challenge'}</span>
       </Link>
     </li>
@@ -336,7 +348,9 @@ function ProgressSummary({ date, challenge, className }: { date: IsoDate; challe
       <h2 className="font-display mb-4 hidden text-[19px] md:block">Your Progress</h2>
       <div className="flex items-center gap-5">
         <ProgressRing value={pct / 100} size={86} stroke={6} label={`${pct}% of the day done`}>
-          <span className="font-display tnum text-[22px]">{pct}%</span>
+          <span className="font-display tnum text-[22px]">
+            <AnimatedNumber value={pct} from={0} />%
+          </span>
         </ProgressRing>
         <dl className="space-y-2">
           <Fact value={`${done} / ${total}`} label="tasks completed" />

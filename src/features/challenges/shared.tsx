@@ -8,6 +8,7 @@ import { addDays, formatDate, formatMinutes } from '../../domain/dates';
 import { STATUS_LABEL } from '../../domain/schedule';
 import type { Challenge, DisplayStatus } from '../../domain/types';
 import { useAction, useApp } from '../../lib/appData';
+import { celebrate } from '../../lib/motion';
 import { useStatusOf } from '../../lib/selectors';
 
 export const STATUS_TONE: Record<DisplayStatus, Tone> = {
@@ -141,7 +142,14 @@ function CompleteDialog({ challenge, open, onClose, future }: { challenge: Chall
   const [earlyOk, setEarlyOk] = useState(false);
   const toggle = useAction((id: string, on: boolean) => toggleCriterion(challenge.id, id, on));
   const complete = useAction((outcome: 'completed' | 'attempted') => completeChallenge(challenge.id, { outcome, early: future, note }), {
-    success: (p) => (p.status === 'completed' ? `Day ${challenge.day} complete.` : `Attempt on Day ${challenge.day} logged.`),
+    // A completed challenge gets the quiet completion moment instead of a toast.
+    success: (p) => {
+      if (p.status === 'completed') {
+        celebrate(challenge.day, challenge.title);
+        return null;
+      }
+      return `Attempt on Day ${challenge.day} logged.`;
+    },
   });
   const blockedByCriteria = hard && !check.mainMet;
   const blockedByEarly = future && !earlyOk;

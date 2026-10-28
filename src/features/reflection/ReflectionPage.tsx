@@ -94,8 +94,8 @@ function ReflectionForm({ date }: { date: IsoDate }) {
               const on = form.mood === m.value;
               return (
                 <button key={m.value} type="button" role="radio" aria-checked={on} onClick={() => set('mood', on ? null : m.value)} className="group flex flex-col items-center gap-2">
-                  <span className={clsx('flex size-12 items-center justify-center rounded-full border transition-colors', on ? 'border-2 border-slate bg-slate-soft text-slate' : 'border-line bg-surface-2 text-ink-3 group-hover:text-ink')}>
-                    <m.icon className="size-[22px]" strokeWidth={1.4} aria-hidden />
+                  <span className={clsx('flex size-12 items-center justify-center rounded-full border transition-colors', on ? 'animate-ping-once border-2 border-slate bg-slate-soft text-slate' : 'border-line bg-surface-2 text-ink-3 group-hover:text-ink')}>
+                    <m.icon key={on ? 'on' : 'off'} className={clsx('size-[22px]', on && 'animate-check')} strokeWidth={1.4} aria-hidden />
                   </span>
                   <span className={clsx('text-[12px]', on ? 'text-ink' : 'text-ink-3')}>{m.label}</span>
                 </button>

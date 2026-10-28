@@ -46,7 +46,12 @@ export function ChallengesPage() {
   const firstMonth = view ? monthKey(view.startDate) : monthKey(today);
   const lastMonth = view ? monthKey(view.endDate) : monthKey(today);
   const initial = monthKey(today) < firstMonth ? firstMonth : monthKey(today) > lastMonth ? lastMonth : monthKey(today);
-  const [month, setMonth] = useState(initial);
+  const [month, setMonthRaw] = useState(initial);
+  const [monthDir, setMonthDir] = useState<'next' | 'prev' | null>(null);
+  const setMonth = (m: string) => {
+    setMonthDir(m > month ? 'next' : 'prev');
+    setMonthRaw(m);
+  };
   if (!view) return null;
 
   const toggle = () => {
@@ -114,7 +119,7 @@ export function ChallengesPage() {
                 <span key={d}>{d}</span>
               ))}
             </div>
-            <ol className="mt-3 grid grid-cols-7 gap-y-3" aria-label={`${monthTitle(month)} calendar`}>
+            <ol key={month} className={clsx('mt-3 grid grid-cols-7 gap-y-3', monthDir && (monthDir === 'next' ? 'animate-slide-next' : 'animate-slide-prev'))} aria-label={`${monthTitle(month)} calendar`}>
               {Array.from({ length: lead - skipDays }, (_, i) => (
                 <li key={`pad-${i}`} aria-hidden />
               ))}
@@ -127,7 +132,9 @@ export function ChallengesPage() {
                 if (!c)
                   return (
                     <li key={date} className="flex justify-center">
-                      <span className={clsx('flex size-10 items-center justify-center text-[13px] md:size-11', date === today ? 'font-semibold text-ink' : 'text-ink-3/60')}>{dom}</span>
+                      <span className={clsx('animate-cell flex size-10 items-center justify-center text-[13px] md:size-11', date === today ? 'font-semibold text-ink' : 'text-ink-3/60')} style={{ ['--i' as string]: i }}>
+                        {dom}
+                      </span>
                     </li>
                   );
                 const s = view.statuses.get(c.id) ?? 'upcoming';
@@ -138,7 +145,8 @@ export function ChallengesPage() {
                     <Link
                       to={`/challenges/${c.id}`}
                       aria-label={`${formatDate(date, 'short')}, Day ${c.day} of ${PROGRAM_DAYS}: ${c.title}. ${STATUS_LABEL[s]}`}
-                      className={clsx('tnum flex size-10 items-center justify-center rounded-full text-[13.5px] transition-transform hover:scale-105 md:size-11', cls)}
+                      className={clsx('animate-cell tnum flex size-10 items-center justify-center rounded-full text-[13.5px] transition-transform duration-150 hover:scale-105 active:scale-90 md:size-11', cls)}
+                      style={{ ['--i' as string]: i }}
                     >
                       {dom}
                     </Link>

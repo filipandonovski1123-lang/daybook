@@ -11,6 +11,7 @@ import { formatDate, formatDuration, formatInstant } from '../../domain/dates';
 import { PROGRAM_DAYS, scheduledDateFor } from '../../domain/schedule';
 import type { Challenge, ToolId } from '../../domain/types';
 import { useAction, useApp, useNow } from '../../lib/appData';
+import { AnimatedNumber } from '../../lib/motion';
 import { useProgramView, useStatusOf } from '../../lib/selectors';
 import { Fact } from '../today/TodayPage';
 import { AttemptLog } from './AttemptLog';
@@ -152,7 +153,9 @@ function Detail({ challenge }: { challenge: Challenge }) {
         </h2>
         <div className="mt-4 flex items-center gap-6">
           <ProgressRing value={pct / 100} size={104} stroke={7} label={`${pct}% of main criteria met`}>
-            <span className="font-display tnum text-[26px]">{pct}%</span>
+            <span className="font-display tnum text-[26px]">
+              <AnimatedNumber value={pct} from={0} />%
+            </span>
           </ProgressRing>
           <dl className="space-y-2.5">
             <Fact value={`${metMain} / ${main.length}`} label="criteria met" />
@@ -178,7 +181,7 @@ function Detail({ challenge }: { challenge: Challenge }) {
         ))}
       </div>
 
-      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="pt-6">
+      <div key={tab} role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="animate-fade-up pt-6">
         {tab === 'plan' && <PlanTab challenge={challenge} check={check} />}
         {tab === 'log' && <LogTab challenge={challenge} />}
         {tab === 'notes' && <NotesTab challenge={challenge} />}

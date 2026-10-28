@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect } from 'react';
-import { HashRouter, Navigate, Route, Routes } from 'react-router';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { Shell } from './components/Shell';
 import { ChallengeDetailPage, CurrentChallengeRedirect } from './features/challenges/ChallengeDetailPage';
 import { ChallengesPage } from './features/challenges/ChallengesPage';
@@ -10,6 +10,7 @@ import { ReflectionPage } from './features/reflection/ReflectionPage';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { TodayPage } from './features/today/TodayPage';
 import { AppDataProvider, useApp } from './lib/appData';
+import { CompletionMoment } from './lib/motion';
 import { ReminderScheduler } from './lib/reminderScheduler';
 import { ToastProvider } from './lib/toast';
 
@@ -33,6 +34,7 @@ function Ready() {
       <ReminderScheduler>
         <Shell>
           <Suspense fallback={<PageSpinner />}>
+            <PageTransition>
             <Routes>
               <Route path="/" element={<TodayPage />} />
               <Route path="/calendar" element={<ChallengesPage />} />
@@ -48,10 +50,22 @@ function Ready() {
               <Route path="/tools/:tool" element={<ToolsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </PageTransition>
           </Suspense>
         </Shell>
+        <CompletionMoment />
       </ReminderScheduler>
     </HashRouter>
+  );
+}
+
+/** Remounts on route change so each screen enters with a soft fade-and-rise. */
+function PageTransition({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  return (
+    <div key={pathname} className="animate-page">
+      {children}
+    </div>
   );
 }
 
