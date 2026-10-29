@@ -1,11 +1,13 @@
 import type { Challenge, ChallengeTheme, CustomChallenge } from '../domain/types';
 import { REST_ID, REST_ITEM, SIGNATURE_ITEMS, SIGNATURE_KEYS, type LibraryItem } from './challenges';
 import { LIBRARY_EXTRA } from './libraryExtra';
+import { TRACK_ITEMS } from './tracks';
+import { WILDCARDS } from './wildcards';
 
 export type { LibraryItem };
 
-/** Every challenge a plan can use: the Signature 30 plus the wider library. */
-export const LIBRARY: LibraryItem[] = [...SIGNATURE_ITEMS, ...LIBRARY_EXTRA];
+/** Every challenge a plan can use: growth tracks, growth wildcards and the Fun pack. */
+export const LIBRARY: LibraryItem[] = [...TRACK_ITEMS, ...WILDCARDS, ...SIGNATURE_ITEMS, ...LIBRARY_EXTRA];
 
 const BY_ID = new Map(LIBRARY.map((i) => [i.id, i]));
 
@@ -18,6 +20,7 @@ export function getLibraryItem(id: string): LibraryItem | undefined {
 export function customToItem(c: CustomChallenge): LibraryItem {
   return {
     id: c.id,
+    pack: 'growth',
     theme: c.theme,
     title: c.title,
     category: c.category,

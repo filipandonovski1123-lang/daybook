@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { Badge, Button, Card, Checkbox, ConfirmDialog, Dialog, Field, Input, PageHeader, Segmented, Select, Switch } from '../../components/ui';
 import { EQUIPMENT } from '../../data/challenges';
+import { LIFE_STAGES } from '../../data/tracks';
 import { changeStartDate, programHasStarted, updateReminder, updateSettings } from '../../db/actions';
 import { deleteAllData, exportData, importData, parseBackup, type ParseResult } from '../../db/backup';
 import { formatDate, formatInstant, isValidIso } from '../../domain/dates';
@@ -35,6 +36,23 @@ export function SettingsPage() {
     <div className="space-y-5">
       <PageHeader title="Settings" subtitle="Everything is stored privately on this device." />
       <ProgramSection />
+      <Section title="Life stage" description="Tailors which skills are suggested and how growth challenges are worded. Changes apply to plans you build or days you swap from now on.">
+        <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Life stage">
+          {LIFE_STAGES.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              role="radio"
+              aria-checked={s.lifeStage === o.value}
+              onClick={() => void save.run({ lifeStage: o.value })}
+              className={`rounded-xl border px-3.5 py-2.5 text-left transition-colors ${s.lifeStage === o.value ? 'border-slate bg-slate-soft' : 'border-line bg-surface-2 hover:border-line-strong'}`}
+            >
+              <span className="block text-[14px] font-medium">{o.label}</span>
+              <span className="mt-0.5 block text-[12px] leading-snug text-ink-3">{o.body}</span>
+            </button>
+          ))}
+        </div>
+      </Section>
       <Section title="Hard Mode" description="Strict about commitments, fair about circumstances, respectful toward you.">
         <Switch
           checked={s.hardMode}

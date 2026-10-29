@@ -6,10 +6,12 @@ No account, no server, no analytics. Everything is stored in your browser on you
 
 ## Challenges and plans
 
-- **Library:** about 160 one-day challenges across six interests (mind, body, creative, social, practical, wellbeing), each rated difficulty 1–5. Source: `src/data/challenges.ts` (the Signature 30) and `src/data/libraryExtra.ts`.
+- **Growth tracks (default):** 14 skill tracks (focus, fitness, energy, public speaking, writing, relationships, courage, money, career, learning, character, direction, resilience, self-reliance), each an 8-step ladder from a first small step to a real capstone. Source: `src/data/tracks.ts`.
+- **Life stage:** student, starting out or established (set in onboarding and Settings). It picks the suggested tracks and rewords some steps (e.g. a student's money capstone is "Earn Your First $50").
+- **Growth plans:** `src/domain/growth.ts` weaves the chosen tracks together (each keeps its order, so steps build on each other), fits days to the chosen time per day (15–30 min, 30–60 min or 1–3 hours; a track's final step may run longer), and mixes in wildcard days (none / some / lots) from `src/data/wildcards.ts` and, optionally, the fun pack.
+- **Fun pack:** the original one-off challenges (juggling, origami, puzzles…) in `src/data/challenges.ts` and `src/data/libraryExtra.ts`. The Library can filter by Growth / Fun.
+- **Signature 30:** the classic fun 30-day program, kept as a preset.
 - **Length:** 3–100 days (presets 7 / 14 / 21 / 30 / 60 / 90).
-- **Choose for me:** `src/domain/planner.ts` builds a plan that ramps from difficulty 1 to 5, prefers the chosen interests and owned equipment, avoids repeating a category on consecutive days, and is sorted so no day is easier than the one before. Shuffle picks a new set.
-- **Signature 30:** the original hand-built 30-day program.
 - **Difficulty curve:** gentle, steady or steep.
 - **Rest days:** optional rest / catch-up day every 5th or 7th day (never the last day); rest days never count as missed.
 - **Your own challenges:** create, edit and delete them in the Library and swap them into any day.
@@ -85,7 +87,7 @@ No location data is collected, and nothing is sent anywhere. The production buil
 src/
   domain/      Pure, tested logic: types/schemas (zod), dates & timezones, schedule mapping,
                success criteria, personal bests, habits, analytics, achievements, reminders, .ics
-  data/        Canonical seed: the 30 challenges and the habit set (single source of truth)
+  data/        Content: growth tracks, wildcards, the fun library, the Signature 30 and the habit set
   db/          Dexie (IndexedDB) schema, all mutations (actions.ts), backup/import
   lib/         App data context, reminder scheduler, notifications, toasts, selectors
   components/  Design-system primitives and the app shell (sidebar / bottom nav)

@@ -18,9 +18,19 @@ interface Opts {
   evidence?: false | string;
 }
 
+/** Existing library entries that genuinely build capability count as growth wildcards; the rest form the Fun pack. */
+const GROWTH_IDS = new Set([
+  'budget', 'first-aid', 'account-security', 'foreign-conversation', 'phrases-50', 'new-alphabet', 'ten-minute-talk', 'storytelling', 'interview',
+  'thank-you-letter', 'volunteer', 'teach-skill', 'ask-for-feedback', 'digital-detox', 'phone-free-24h', 'meditate-20', 'gratitude-letter',
+  'mindful-walk', 'morning-pages', 'declutter', 'repair', 'host-event', 'lead-activity', 'run-5k', 'run-10k', 'plank', 'push-ups', 'typing',
+  'feynman', 'spreadsheet', 'website', 'code-game', 'meal-prep', 'cook-for-others', 'knife-skills', 'box-breathing', 'screen-sunset',
+  'silent-morning', 'day-retreat', 'map-navigation', 'compliments', 'new-conversation', 'impromptu', 'build-furniture', 'fix-tyre', 'sewing',
+]);
+
 function x(id: string, title: string, theme: ChallengeTheme, category: string, difficulty: number, estimatedMinutes: number, objective: string, description: string, preparation: string[], learningPlan: string[], o: Opts = {}): LibraryItem {
   return {
     id,
+    pack: GROWTH_IDS.has(id) ? 'growth' : 'fun',
     title,
     theme,
     category,

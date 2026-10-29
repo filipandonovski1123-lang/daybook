@@ -9,6 +9,7 @@ import type { DisplayStatus, IsoDate } from '../../domain/types';
 import { useApp } from '../../lib/appData';
 import { useProgramView } from '../../lib/selectors';
 import { StatusBadge } from './shared';
+import { challengeLabel } from '../../data/tracks';
 
 /** Circle treatment per status — the calendar's whole visual language. */
 const CIRCLE: Record<DisplayStatus, string> = {
@@ -178,7 +179,7 @@ export function ChallengesPage() {
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[14.5px]">{c.title}</span>
                       <span className="block text-[12px] text-ink-3">
-                        {c.category} · {formatDate(date, 'short')}
+                        {challengeLabel(c)} · {formatDate(date, 'short')}
                         {p?.rescheduledTo ? ` · was ${formatDate(view.originalDateOf(c), 'dm')}` : ''}
                       </span>
                     </span>

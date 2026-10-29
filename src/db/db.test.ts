@@ -34,6 +34,11 @@ async function freshProgram(startOffset: number) {
     themes: [],
     curve: 'steady',
     restEvery: 0,
+    lifeStage: 'early',
+    tracks: [],
+    timeBudget: 'medium',
+    wildcards: 'some',
+    includeFun: true,
   });
   return { today: t, start };
 }
@@ -329,6 +334,12 @@ describe('v3 migration (program length and library links)', () => {
     expect(p?.restEvery).toBe(0);
     expect((await db3.challenges.get('day-02'))?.kind).toBe('challenge');
     expect(await db3.customChallenges.count()).toBe(0);
+    // v5 defaults
+    expect((await db3.settings.get('settings'))?.lifeStage ?? 'early').toBe('early');
+    expect(p?.tracks).toEqual([]);
+    expect(p?.timeBudget).toBe('medium');
+    expect(p?.includeFun).toBe(true);
+    expect((await db3.challenges.get('day-02'))?.track).toBeNull();
     db3.close();
     await Dexie.delete(name);
   });
@@ -372,5 +383,24 @@ describe('custom challenges and rest days in plans', () => {
     await db.customChallenges.clear();
     await importData(parsed.backup);
     expect(await db.customChallenges.count()).toBe(1);
+  });
+});
+
+describe('growth plans', () => {
+  it('stores tracks and words steps for the life stage', async () => {
+    const { growthPlan } = await import('../domain/growth');
+    const { LIBRARY } = await import('../data/library');
+    await freshProgram(0);
+    await A.updateSettings({ lifeStage: 'student' });
+    const plan = growthPlan(LIBRARY, { length: 30, tracks: ['money', 'speaking'], timeBudget: 'long', wildcards: 'some', includeFun: false, equipment: [], seed: 3 });
+    expect(plan).toContain('money-7');
+    await A.replacePlan(plan, { mode: 'growth', tracks: ['money', 'speaking'], timeBudget: 'long', wildcards: 'some', includeFun: false });
+    const program = await db.program.get('program');
+    expect(program?.mode).toBe('growth');
+    expect(program?.tracks).toEqual(['money', 'speaking']);
+    const day = (await db.challenges.toArray()).find((c) => c.libraryId === 'money-7')!;
+    expect(day.title).toBe('Earn Your First $50');
+    expect(day.track).toBe('money');
+    expect(day.step).toBe(7);
   });
 });

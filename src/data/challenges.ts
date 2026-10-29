@@ -1,5 +1,5 @@
 import { REST_ID } from '../domain/planner';
-import type { Challenge, ChallengeTheme, Criterion, MetricField, PbKey, ToolId } from '../domain/types';
+import type { Challenge, ChallengeTheme, Criterion, LifeStage, MetricField, PbKey, ToolId } from '../domain/types';
 
 export { REST_ID };
 
@@ -39,11 +39,27 @@ export const EQUIPMENT: Record<string, string> = {
 };
 
 /** A reusable challenge definition. A plan places library items on days 1…N. */
-export type LibraryItem = Omit<Challenge, 'id' | 'day' | 'updatedAt' | 'libraryId' | 'kind'> & { id: string; theme: ChallengeTheme };
+/** Wording that replaces the default for a life stage. */
+export interface StageVariant {
+  title?: string;
+  objective?: string;
+  learningPlan?: string[];
+}
+
+export type LibraryItem = Omit<Challenge, 'id' | 'day' | 'updatedAt' | 'libraryId' | 'kind' | 'track' | 'step'> & {
+  id: string;
+  theme: ChallengeTheme;
+  /** growth = makes you more capable; fun = skills and tricks for enjoyment. */
+  pack: 'growth' | 'fun';
+  track?: string;
+  step?: number;
+  variants?: Partial<Record<LifeStage, StageVariant>>;
+};
 
 
 export const REST_ITEM: LibraryItem = {
   id: REST_ID,
+  pack: 'growth',
   theme: 'wellbeing',
   title: 'Rest & catch-up day',
   category: 'Recovery',
@@ -79,7 +95,7 @@ const THEME_FOR_CATEGORY: Record<string, ChallengeTheme> = {
   Debate: 'social', 'Public Speaking': 'social', 'Mental Speed': 'mind', Chess: 'mind', 'Personal Best': 'practical', 'Puzzle Mastery': 'mind',
 };
 
-type Seed = Omit<Challenge, 'id' | 'libraryId' | 'kind' | 'updatedAt' | 'evidence' | 'stretchGoal' | 'safety' | 'tools' | 'pbKeys' | 'metrics' | 'criteria' | 'bonus' | 'equipment'> & {
+type Seed = Omit<Challenge, 'id' | 'libraryId' | 'kind' | 'track' | 'step' | 'updatedAt' | 'evidence' | 'stretchGoal' | 'safety' | 'tools' | 'pbKeys' | 'metrics' | 'criteria' | 'bonus' | 'equipment'> & {
   bonus?: string;
   equipment?: string[];
   safety?: string[];
@@ -686,11 +702,15 @@ const SEEDS: Seed[] = [
   },
 ];
 
+/** Signature challenges that genuinely build capability (the rest are in the Fun pack). */
+const GROWTH_SIGNATURE = new Set(['speed-reading', 'data-analysis', 'debate', 'persuasive-speaking', 'restaurant-dish', 'skill-sprint', 'logic-problems', 'sign-language']);
+
 function seedToItem(s: Seed, key: string): LibraryItem {
   const { day: _day, ...rest } = s;
   return {
     ...rest,
     id: key,
+    pack: GROWTH_SIGNATURE.has(key) ? 'growth' : 'fun',
     theme: THEME_FOR_CATEGORY[s.category] ?? 'mind',
     bonus: s.bonus ?? null,
     equipment: s.equipment ?? [],
@@ -708,10 +728,23 @@ export const SIGNATURE_ITEMS: LibraryItem[] = SEEDS.map((s, i) => seedToItem(s, 
 
 export const dayId = (day: number) => `day-${String(day).padStart(2, '0')}`;
 
-/** Place a library item on a program day. */
-export function instantiate(item: LibraryItem, day: number, now: number = Date.now()): Challenge {
-  const { id, theme: _theme, ...rest } = item;
-  return { ...structuredClone(rest), id: dayId(day), day, libraryId: id, kind: id === REST_ID ? 'rest' : 'challenge', updatedAt: now };
+/** Place a library item on a program day, using the wording for the user's life stage. */
+export function instantiate(item: LibraryItem, day: number, now: number = Date.now(), stage?: LifeStage): Challenge {
+  const { id, theme: _theme, pack: _pack, track, step, variants, ...rest } = item;
+  const v = stage ? variants?.[stage] : undefined;
+  return {
+    ...structuredClone(rest),
+    ...(v?.title ? { title: v.title } : {}),
+    ...(v?.objective ? { objective: v.objective } : {}),
+    ...(v?.learningPlan ? { learningPlan: [...v.learningPlan] } : {}),
+    id: dayId(day),
+    day,
+    libraryId: id,
+    kind: id === REST_ID ? 'rest' : 'challenge',
+    track: track ?? null,
+    step: step ?? null,
+    updatedAt: now,
+  };
 }
 
 /** The Signature 30 as a ready-made plan (also the default seed before onboarding). */

@@ -63,7 +63,7 @@ describe('app', () => {
   });
 
   it('keeps the private habit discreet and lets it be hidden from Today', async () => {
-    await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), length: 30, mode: 'signature', themes: [], curve: 'steady', restEvery: 0, startedAt: null, history: [] });
+    await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), length: 30, mode: 'signature', themes: [], curve: 'steady', restEvery: 0, tracks: [], timeBudget: 'medium', wildcards: 'some', includeFun: true, startedAt: null, history: [] });
     await updateSettings({ onboarded: true });
     render(<App />);
     await screen.findByRole('heading', { name: 'Learn to Juggle Three Balls', level: 1 });
@@ -75,7 +75,7 @@ describe('app', () => {
   });
 
   it('every navigation item is a reachable link', async () => {
-    await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), length: 30, mode: 'signature', themes: [], curve: 'steady', restEvery: 0, startedAt: null, history: [] });
+    await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), length: 30, mode: 'signature', themes: [], curve: 'steady', restEvery: 0, tracks: [], timeBudget: 'medium', wildcards: 'some', includeFun: true, startedAt: null, history: [] });
     await updateSettings({ onboarded: true });
     render(<App />);
     await screen.findByRole('heading', { name: 'Learn to Juggle Three Balls', level: 1 });

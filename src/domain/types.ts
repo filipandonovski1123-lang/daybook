@@ -25,6 +25,9 @@ export const reminderSchema = z.object({
 });
 export type Reminder = z.infer<typeof reminderSchema>;
 
+export const lifeStage = z.enum(['student', 'early', 'established']);
+export type LifeStage = z.infer<typeof lifeStage>;
+
 export const settingsSchema = z.object({
   id: z.literal('settings'),
   displayName: z.string().max(60),
@@ -41,6 +44,8 @@ export const settingsSchema = z.object({
   equipment: z.array(z.string()),
   constraints: z.string().max(2000),
   onboarded: z.boolean(),
+  /** Tailors challenge wording: at school/uni, early career, or established. */
+  lifeStage: lifeStage.default('early'),
   createdAt: timestamp,
 });
 export type Settings = z.infer<typeof settingsSchema>;
@@ -66,7 +71,16 @@ export const programSchema = z.object({
   /** Number of days, one challenge per day. Older data predates this and is 30. */
   length: z.number().int().min(MIN_PROGRAM_DAYS).max(MAX_PROGRAM_DAYS).default(30),
   /** signature = the hand-built 30; auto = generated from interests; the user may swap days either way. */
-  mode: z.enum(['signature', 'auto']).default('signature'),
+  /** growth = track-based plan (default for new plans); signature = the classic 30; auto = older library-based plans. */
+  mode: z.enum(['signature', 'auto', 'growth']).default('signature'),
+  /** Growth tracks woven through the plan. */
+  tracks: z.array(z.string()).default([]),
+  /** Typical time per day: short ≈ 15–30 min, medium ≈ 30–60, long ≈ 1–3 h. */
+  timeBudget: z.enum(['short', 'medium', 'long']).default('medium'),
+  /** How often standalone wildcard days appear. */
+  wildcards: z.enum(['none', 'some', 'many']).default('some'),
+  /** Whether wildcard days may include fun challenges (juggling, puzzles…). */
+  includeFun: z.boolean().default(true),
   themes: z.array(challengeTheme).default([]),
   /** How quickly difficulty rises across the plan. */
   curve: difficultyCurve.default('steady'),
@@ -150,6 +164,9 @@ export const challengeSchema = z.object({
   libraryId: z.string().nullable().default(null),
   /** Rest / catch-up days carry no challenge and never count as missed. */
   kind: z.enum(['challenge', 'rest']).default('challenge'),
+  /** Growth track this day belongs to, and its step on that track (1–8). */
+  track: z.string().nullable().default(null),
+  step: z.number().int().nullable().default(null),
   title: z.string().min(1).max(120),
   category: z.string().min(1).max(60),
   difficulty: z.number().int().min(1).max(5),

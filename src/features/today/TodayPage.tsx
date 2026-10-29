@@ -18,6 +18,7 @@ import { ChallengeActions, StatusBadge } from '../challenges/shared';
 import { HabitRow } from '../habits/HabitRow';
 import { MissedAcknowledgement } from './MissedAcknowledgement';
 import { RestDayPanel } from './RestDay';
+import { challengeLabel } from '../../data/tracks';
 
 export function TodayPage() {
   const { data, today } = useApp();
@@ -195,7 +196,7 @@ function Headline({ view, challenge, day, isToday }: { view: ProgramView; challe
       <h1 className="font-display text-[34px] leading-[1.08] md:text-[44px]">{challenge.title}</h1>
       <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-ink-2">{challenge.objective}</p>
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[12.5px] text-ink-3">
-        <span>{challenge.category}</span>
+        <span>{challengeLabel(challenge)}</span>
         <span aria-hidden>·</span>
         <span>~{hours(challenge.estimatedMinutes)}</span>
         <StatusBadge status={status} />
@@ -409,7 +410,7 @@ function MiniChallenge({ challenge, showPrep = false, prepLabel = 'Prepare for t
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[14.5px]">{challenge.title}</span>
           <span className="block text-[12px] text-ink-3">
-            {challenge.category} · ~{hours(challenge.estimatedMinutes)}
+            {challengeLabel(challenge)} · ~{hours(challenge.estimatedMinutes)}
           </span>
         </span>
         <StatusBadge status={status} />

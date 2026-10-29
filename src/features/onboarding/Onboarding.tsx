@@ -5,6 +5,7 @@ import { Backdrop } from '../../components/Scene';
 import { Logo } from '../../components/Shell';
 import { Badge, Button, Card, Checkbox, Field, Input, Switch, Textarea } from '../../components/ui';
 import { EQUIPMENT } from '../../data/challenges';
+import { LIFE_STAGES, RECOMMENDED_TRACKS } from '../../data/tracks';
 import { completeOnboarding, type OnboardingInput } from '../../db/actions';
 import { addDays, DEFAULT_TIMEZONE, formatDate, isValidIso, isValidTimeZone, todayIn, weekdayOf } from '../../domain/dates';
 import { displayName } from '../../domain/habits';
@@ -36,14 +37,19 @@ export function Onboarding() {
     equipment: data.settings.equipment,
     constraints: data.settings.constraints,
     hardMode: data.settings.hardMode,
+    lifeStage: data.settings.lifeStage,
     plan: [],
-    mode: 'auto',
+    mode: 'growth',
     themes: [],
     curve: 'steady',
     restEvery: 0,
+    tracks: [],
+    timeBudget: 'medium',
+    wildcards: 'some',
+    includeFun: true,
   }));
   const lib = useLibrary();
-  const [draft, setDraft] = useState<PlanDraft>(() => newDraft(data.settings.equipment, lib.items));
+  const [draft, setDraft] = useState<PlanDraft>(() => newDraft(data.settings.equipment, lib.items, data.settings.lifeStage));
   const cur = STEPS[step];
   const set = <K extends keyof OnboardingInput>(k: K, v: OnboardingInput[K]) => setForm((f) => ({ ...f, [k]: v }));
   const [permission, setPermission] = useState(notificationSupport().permission);
@@ -53,7 +59,7 @@ export function Onboarding() {
   const canNext = cur === 'Start date' ? !!form.startDate && !dateError && isValidTimeZone(form.timezone) : cur === 'Challenges' ? draft.plan.length >= 3 : true;
   const next = () => {
     // Equipment is known now, so build the suggested plan around it.
-    if (cur === 'Equipment' && draft.mode === 'auto') setDraft({ ...draft, plan: buildPlan(draft, form.equipment, lib.items) });
+    if (cur === 'Equipment' && draft.mode !== 'signature') setDraft({ ...draft, plan: buildPlan(draft, form.equipment, lib.items) });
     setStep((s) => s + 1);
   };
 
@@ -89,6 +95,25 @@ export function Onboarding() {
               <Field label="What should we call you? (optional)" htmlFor="ob-name">
                 <Input id="ob-name" value={form.displayName} maxLength={60} autoComplete="given-name" onChange={(e) => set('displayName', e.target.value)} placeholder="Your name" />
               </Field>
+              <fieldset className="mt-5">
+                <legend className="mb-2 text-sm font-medium">Where are you in life?</legend>
+                <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Life stage">
+                  {LIFE_STAGES.map((o) => (
+                    <ModeCard
+                      key={o.value}
+                      selected={form.lifeStage === o.value}
+                      onSelect={() => {
+                        set('lifeStage', o.value);
+                        // Suggested tracks and challenge wording follow the life stage.
+                        if (draft.mode === 'growth') setDraft({ ...draft, tracks: [...RECOMMENDED_TRACKS[o.value]] });
+                      }}
+                      title={o.label}
+                      body={o.body}
+                    />
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-ink-3">Tailors the suggested skills and how challenges are worded. Change it any time in Settings.</p>
+              </fieldset>
             </StepBody>
           )}
 
@@ -124,8 +149,8 @@ export function Onboarding() {
           )}
 
           {cur === 'Challenges' && (
-            <StepBody icon={<Target />} title="Build your challenge" lead="Choose how long, and whether we pick the challenges or you start from the Signature 30.">
-              <PlanBuilder draft={draft} onChange={setDraft} equipment={form.equipment} startDate={form.startDate} />
+            <StepBody icon={<Target />} title="Build your challenge" lead="Choose how long and which skills to build. Each track climbs from a first step to a real capstone.">
+              <PlanBuilder draft={draft} onChange={setDraft} equipment={form.equipment} startDate={form.startDate} stage={form.lifeStage} />
             </StepBody>
           )}
 
@@ -208,7 +233,7 @@ export function Onboarding() {
                 {cur === 'Start date' && !form.startDate ? 'Pick a date' : 'Continue'}
               </Button>
             ) : (
-              <Button variant="primary" busy={finish.busy} onClick={() => void finish.run({ ...form, plan: draft.plan, mode: draft.mode, themes: draft.themes, curve: draft.curve, restEvery: draft.restEvery })}>
+              <Button variant="primary" busy={finish.busy} onClick={() => void finish.run({ ...form, plan: draft.plan, mode: draft.mode, themes: draft.themes, curve: draft.curve, restEvery: draft.restEvery, tracks: draft.tracks, timeBudget: draft.timeBudget, wildcards: draft.wildcards, includeFun: draft.includeFun })}>
                 Start my program
               </Button>
             )}

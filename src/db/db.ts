@@ -21,7 +21,7 @@ import type {
 } from '../domain/types';
 
 /** Bump with a new `this.version(n)` block (and an `.upgrade()` if data needs reshaping). */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export class ChallengeDB extends Dexie {
   settings!: EntityTable<Settings, 'id'>;
@@ -112,6 +112,24 @@ export class ChallengeDB extends Dexie {
         });
         await tx.table('challenges').toCollection().modify((c: Partial<Challenge>) => {
           c.kind ??= 'challenge';
+        });
+      });
+    // v5: growth tracks, life stage, time budget and wildcard settings.
+    this.version(5)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table('settings').toCollection().modify((s: Partial<Settings>) => {
+          s.lifeStage ??= 'early';
+        });
+        await tx.table('program').toCollection().modify((p: Partial<Program>) => {
+          p.tracks ??= [];
+          p.timeBudget ??= 'medium';
+          p.wildcards ??= 'some';
+          p.includeFun ??= true;
+        });
+        await tx.table('challenges').toCollection().modify((c: Partial<Challenge>) => {
+          c.track ??= null;
+          c.step ??= null;
         });
       });
   }

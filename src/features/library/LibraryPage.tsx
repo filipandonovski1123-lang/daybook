@@ -16,7 +16,7 @@ export function LibraryPage() {
   const lib = useLibrary();
   const [tab, setTab] = useState<'all' | 'mine'>('all');
   const source = tab === 'mine' ? lib.items.filter((i) => i.id.startsWith('custom:')) : lib.items;
-  const { q, setQ, theme, setTheme, level, setLevel, items } = useLibraryFilters(source);
+  const { q, setQ, theme, setTheme, level, setLevel, pack, setPack, items } = useLibraryFilters(source);
   const [viewing, setViewing] = useState<LibraryItem | null>(null);
   const [editing, setEditing] = useState<string | null | 'new'>(null);
   const inPlan = new Map(data.challenges.map((c) => [challengeKey(c), c.day]));
@@ -39,7 +39,7 @@ export function LibraryPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" aria-hidden />
           <Input aria-label="Search the library" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
         </div>
-        <LibraryFilters theme={theme} setTheme={setTheme} level={level} setLevel={setLevel} />
+        <LibraryFilters theme={theme} setTheme={setTheme} level={level} setLevel={setLevel} pack={pack} setPack={setPack} />
       </div>
 
       {items.length === 0 ? (

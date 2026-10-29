@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { instantiate } from '../data/challenges';
 import { getLibraryItem, LIBRARY, SIGNATURE_PLAN } from '../data/library';
+import { growthPlan, pickLadderSteps } from './growth';
 import { generatePlan, isRestDay, REST_ID, restCount, sortByDifficulty, stripRest, targetDifficulty, withRestDays } from './planner';
 import { displayStatus } from './schedule';
 import { challengeCounts } from './stats';
@@ -139,5 +140,83 @@ describe('summary', () => {
     const entries = [e('2026-11-01'), e('2026-11-02'), e('2026-11-03'), e('2026-11-05'), e('2026-11-06', 'missed')];
     expect(longestStreak(entries, [])).toBe(3);
     expect(longestStreak([], [])).toBe(0);
+  });
+});
+
+describe('growth plans (tracks + wildcards)', () => {
+  const lib = LIBRARY;
+  const base = { length: 30, tracks: ['focus', 'money', 'speaking'], timeBudget: 'long' as const, wildcards: 'some' as const, includeFun: true, equipment: [], seed: 9 };
+
+  it('fills the exact length with unique challenges', () => {
+    for (const length of [7, 14, 30, 60, 90]) {
+      const plan = growthPlan(lib, { ...base, length });
+      expect(plan).toHaveLength(length);
+      expect(new Set(plan).size).toBe(length);
+    }
+  });
+
+  it('keeps every track in step order and weaves tracks together', () => {
+    const plan = growthPlan(lib, base);
+    for (const t of base.tracks) {
+      const steps = plan.map((id) => getLibraryItem(id)!).filter((i) => i.track === t).map((i) => i.step!);
+      expect(steps.length).toBeGreaterThanOrEqual(5);
+      for (let i = 1; i < steps.length; i++) expect(steps[i]!).toBeGreaterThan(steps[i - 1]!);
+      expect(steps.at(-1)).toBe(8); // every track ends on its capstone
+    }
+    // No track three days running.
+    const tracks = plan.map((id) => getLibraryItem(id)!.track ?? 'wild');
+    for (let i = 2; i < tracks.length; i++) expect(tracks[i] === tracks[i - 1] && tracks[i] === tracks[i - 2] && tracks[i] !== 'wild').toBe(false);
+  });
+
+  it('adds wildcards at the chosen rate, with fun ones only when allowed', () => {
+    const count = (p: string[]) => p.filter((id) => !getLibraryItem(id)!.track).length;
+    // 3 tracks × 8 steps = 24 track days, so 'none' at 24 days has no wildcards…
+    expect(count(growthPlan(lib, { ...base, length: 24, wildcards: 'none' }))).toBe(0);
+    // …and a longer plan fills the extra days with wildcards rather than repeating tracks.
+    expect(count(growthPlan(lib, { ...base, wildcards: 'none' }))).toBe(6);
+    expect(count(growthPlan(lib, { ...base, wildcards: 'some' }))).toBeGreaterThanOrEqual(5);
+    expect(count(growthPlan(lib, { ...base, wildcards: 'many' }))).toBeGreaterThan(5);
+    const noFun = growthPlan(lib, { ...base, wildcards: 'many', includeFun: false });
+    expect(noFun.every((id) => getLibraryItem(id)!.pack === 'growth')).toBe(true);
+  });
+
+  it('always opens on a track step, even when wildcards fill most days', () => {
+    for (const wildcards of ['none', 'some', 'many'] as const)
+      for (const length of [7, 30, 60, 90]) {
+        const plan = growthPlan(lib, { ...base, tracks: ['focus'], wildcards, length });
+        expect(getLibraryItem(plan[0]!)!.track, `${wildcards} ${length}`).toBe('focus');
+      }
+  });
+
+  it('respects the time budget except for capstone days', () => {
+    const plan = growthPlan(lib, { ...base, timeBudget: 'short', wildcards: 'none' });
+    for (const id of plan) {
+      const i = getLibraryItem(id)!;
+      if (i.step !== 8) expect(i.estimatedMinutes, id).toBeLessThanOrEqual(45);
+    }
+  });
+
+  it('picks ladder steps by curve and always ends on the top', () => {
+    expect(pickLadderSteps(8, 8)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(pickLadderSteps(8, 3)).toEqual([0, 4, 7]);
+    expect(pickLadderSteps(8, 1)).toEqual([7]);
+    const gentle = pickLadderSteps(8, 4, 'gentle');
+    const steep = pickLadderSteps(8, 4, 'steep');
+    expect(gentle.reduce((a, b) => a + b)).toBeLessThan(steep.reduce((a, b) => a + b));
+    for (const p of [gentle, steep]) expect(new Set(p).size).toBe(4);
+  });
+
+  it('every track has 8 steps that never get easier, and stage wording applies', async () => {
+    const { TRACKS } = await import('../data/tracks');
+    const { instantiate } = await import('../data/challenges');
+    for (const t of TRACKS) {
+      const steps = LIBRARY.filter((i) => i.track === t.id).sort((a, b) => a.step! - b.step!);
+      expect(steps.map((s) => s.step), t.id).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+      for (let i = 1; i < 8; i++) expect(steps[i]!.difficulty, `${t.id} step ${i + 1}`).toBeGreaterThanOrEqual(steps[i - 1]!.difficulty);
+    }
+    const earn = getLibraryItem('money-7')!;
+    expect(instantiate(earn, 1, 0, 'student').title).toBe('Earn Your First $50');
+    expect(instantiate(earn, 1, 0, 'early').title).toBe(earn.title);
+    expect(instantiate(earn, 1, 0, 'student').track).toBe('money');
   });
 });
