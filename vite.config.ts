@@ -42,9 +42,9 @@ export default defineConfig({
         start_url: './',
         scope: './',
         icons: [
-          { src: 'icons/steps-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: 'icons/steps-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: 'icons/steps-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: 'icons/seal-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icons/seal-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icons/seal-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
     }),
