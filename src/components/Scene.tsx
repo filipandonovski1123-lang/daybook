@@ -144,19 +144,29 @@ function Attribution({ quote }: { quote: Quote }) {
  * Decorative only: it sits behind the heading area, never behind dense content, and is
  * skipped entirely if the file is missing. `full` covers the whole screen (onboarding).
  */
+/** Backdrop opacity for the dark styles: [behind a heading, full-screen]. */
+const BACKDROP_STRENGTH: Record<'midnight' | 'forest' | 'athletic', [number, number]> = {
+  midnight: [0.75, 0.6],
+  forest: [0.45, 0.35],
+  athletic: [0.6, 0.5],
+};
+
 export function Backdrop({ kind, full = false }: { kind: BackdropKind; full?: boolean }) {
+  const palette = usePalette();
   const { url, state: photo } = useThemedImage(BACKDROP[kind]);
   if (photo !== 'ok') return null;
   const mask = full
     ? 'linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.3) 100%)'
     : 'linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.85) 45%, transparent 100%)';
+  // The dark styles' own photos are dark already, so they need more strength to show at all.
+  const strength = palette === 'editorial' ? undefined : BACKDROP_STRENGTH[palette][full ? 1 : 0];
   return (
     <div className={clsx('pointer-events-none absolute inset-x-0 top-0 -z-10 overflow-hidden', full ? 'fixed inset-0 h-dvh' : 'h-[380px] md:h-[460px]')} aria-hidden>
       <img
         src={url}
         alt=""
         className={clsx('animate-fade size-full object-cover', full ? 'opacity-[0.6] dark:opacity-[0.3]' : 'opacity-[0.55] dark:opacity-[0.28]')}
-        style={{ maskImage: mask, WebkitMaskImage: mask }}
+        style={{ maskImage: mask, WebkitMaskImage: mask, opacity: strength }}
       />
     </div>
   );
