@@ -30,7 +30,7 @@ const utc = (ms: number) => new Date(ms).toISOString().replace(/[-:]/g, '').repl
  */
 export function buildIcs(args: { startDate: IsoDate; timezone: string; challenges: readonly Challenge[]; reminders: readonly Reminder[]; now?: number }): string {
   const stamp = utc(args.now ?? Date.now());
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Day Challenge//Reminders//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:${args.challenges.length}-Day Challenge`];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Daybook//Reminders//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:Daybook`];
   const sorted = [...args.challenges].sort((a, b) => a.day - b.day);
   for (const c of sorted) {
     const date = scheduledDateFor(args.startDate, c.day);

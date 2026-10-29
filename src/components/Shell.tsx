@@ -33,18 +33,13 @@ const BACKDROP_FOR: [string, BackdropKind][] = [
   ['/more', 'calendar'],
 ];
 
-export function Wordmark({ compact = false, days = 30 }: { compact?: boolean; days?: number }) {
-  return (
-    <span className="flex items-baseline gap-1.5">
-      <span className={clsx('font-display leading-none text-ink', compact ? 'text-[22px]' : 'text-[26px]')}>{days}</span>
-      <span className="text-[11px] text-ink-2">Day Challenge</span>
-    </span>
-  );
+export function Wordmark({ compact = false }: { compact?: boolean }) {
+  return <span className={clsx('font-display leading-none text-ink', compact ? 'text-[22px]' : 'text-[26px]')}>Daybook</span>;
 }
 
 /** Kept for onboarding. */
-export function Logo({ days }: { days?: number }) {
-  return <Wordmark days={days} />;
+export function Logo() {
+  return <Wordmark />;
 }
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -72,7 +67,7 @@ export function Shell({ children }: { children: ReactNode }) {
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-line bg-surface px-4 py-6 md:flex lg:w-60">
         <Link to="/" className="mb-8 px-2">
-          <Wordmark days={data.program?.length} />
+          <Wordmark />
         </Link>
         <nav aria-label="Main" className="flex flex-col gap-0.5">
           {SIDEBAR.map((n) => (
@@ -99,8 +94,8 @@ export function Shell({ children }: { children: ReactNode }) {
         {backdrop && <Backdrop key={backdrop} kind={backdrop} />}
         {/* Mobile top bar */}
         <header className="flex items-center justify-between px-5 pb-1 pt-[max(14px,env(safe-area-inset-top))] md:hidden">
-          <Link to="/" aria-label="30 Day Challenge, Today">
-            <Wordmark compact days={data.program?.length} />
+          <Link to="/" aria-label="Daybook, Today">
+            <Wordmark compact />
           </Link>
           <Link to="/settings" aria-label="Settings" className="flex size-8 items-center justify-center rounded-full border border-line bg-surface-2 text-[13px] font-medium text-ink-2">
             {initial || <SettingsIcon className="size-4" strokeWidth={1.6} />}

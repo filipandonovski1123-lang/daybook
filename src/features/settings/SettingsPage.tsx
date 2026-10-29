@@ -202,7 +202,7 @@ function RemindersSection() {
   const exportIcs = () => {
     if (!data.program) return;
     const ics = buildIcs({ startDate: data.program.startDate, timezone: data.settings.timezone, challenges: data.challenges, reminders: data.reminders.filter((r) => r.enabled) });
-    downloadText('30-day-challenge-reminders.ics', ics, 'text/calendar');
+    downloadText('daybook-reminders.ics', ics, 'text/calendar');
     toast.show('Calendar file downloaded. Open it to add the reminders to your calendar app.', { tone: 'info' });
   };
 
@@ -265,7 +265,7 @@ function RemindersSection() {
             <strong className="text-ink">How delivery works:</strong> reminders fire while the app is open, in a background tab, or running as an installed app. If the app was closed at reminder time, it shows the reminder when you next open it (within 2 hours). Browsers can’t schedule notifications for a fully closed web app without a push server, which this private, offline app deliberately doesn’t use.
           </p>
           <p className="mt-2 text-ink-2">
-            <strong className="text-ink">Reliable when closed:</strong> add the 30-day schedule to your phone’s calendar. Its alarms fire even with this app closed. Re-export if you change times or dates.
+            <strong className="text-ink">Reliable when closed:</strong> add your schedule to your phone’s calendar. Its alarms fire even with this app closed. Re-export if you change times or dates.
           </p>
           {support.ios && !support.standalone && <p className="mt-2 text-warn">iPhone/iPad: web notifications need iOS 16.4+ and the app added to your Home Screen (Share → Add to Home Screen).</p>}
           {lastError && <p className="mt-2 text-danger">Last delivery problem: {lastError}</p>}
@@ -303,7 +303,7 @@ function DataSection() {
   const [storage, setStorage] = useState<{ usage?: number; quota?: number; persisted?: boolean } | null>(null);
   const exp = useAction(async () => {
     const b = await exportData(includeFiles);
-    downloadText(`30-day-challenge-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(b), 'application/json');
+    downloadText(`daybook-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(b), 'application/json');
   }, { success: 'Backup downloaded.' });
   const imp = useAction(async () => {
     if (parsed?.ok) await importData(parsed.backup);

@@ -68,7 +68,7 @@ export function Onboarding() {
       <Backdrop kind="welcome" full />
       <div className="mx-auto w-full max-w-xl">
         <div className="mb-6 flex items-center gap-3">
-          <Logo days={draft.plan.length || 30} />
+          <Logo />
           <div className="flex-1">
             <p className="text-xs font-medium text-ink-3">
               Setup · Step {step + 1} of {STEPS.length}

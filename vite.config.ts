@@ -33,8 +33,8 @@ export default defineConfig({
       injectManifest: { globPatterns: ['**/*.{js,css,html,svg,png,jpg,webmanifest,woff2}'] },
       devOptions: { enabled: false },
       manifest: {
-        name: 'Day Challenge',
-        short_name: 'Day Challenge',
+        name: 'Daybook',
+        short_name: 'Daybook',
         description: 'A private daily-challenge, habit and progress tracker. One new skill a day.',
         theme_color: '#f2f0eb',
         background_color: '#f3efec',

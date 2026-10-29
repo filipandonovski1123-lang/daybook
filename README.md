@@ -1,4 +1,4 @@
-# Day Challenge
+# Daybook
 
 A private, offline-first personal growth tracker: one new challenge a day for a length you choose, a rotating habit system, personal bests, progress analytics, reminders and an optional Hard Mode accountability system.
 
