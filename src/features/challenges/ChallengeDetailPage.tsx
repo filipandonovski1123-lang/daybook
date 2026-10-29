@@ -24,6 +24,7 @@ import { EvidenceGallery } from './EvidenceGallery';
 import { MetricsForm } from './MetricsForm';
 import { ChallengeActions, StatusBadge } from './shared';
 import { challengeLabel } from '../../data/tracks';
+import { TrackSymbol } from '../../components/TrackSymbol';
 
 const ProgressLine = lazy(() => import('../progress/Charts').then((m) => ({ default: m.ProgressLine })));
 
@@ -127,7 +128,10 @@ function Detail({ challenge }: { challenge: Challenge }) {
 
       <header className="mt-8">
         <div className="flex items-center justify-between gap-3">
-          <p className="eyebrow">{challengeLabel(challenge)}</p>
+          <p className="eyebrow inline-flex items-center gap-1.5">
+            <TrackSymbol track={challenge.track} className="size-3.5" />
+            {challengeLabel(challenge)}
+          </p>
           <span className="flex items-center gap-4">
             {!dayLocked(challenge.id) && (
               <button type="button" onClick={() => setSwapOpen(true)} className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-3 hover:text-ink">

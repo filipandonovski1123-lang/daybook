@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Badge, Button, Dialog, Difficulty, Input, Segmented } from '../../components/ui';
 import { SIGNATURE_PLAN, THEMES, type LibraryItem } from '../../data/library';
 import { RECOMMENDED_TRACKS, TRACKS } from '../../data/tracks';
+import { TrackSymbol } from '../../components/TrackSymbol';
 import { addDays, formatDate } from '../../domain/dates';
 import { growthPlan, type TimeBudget, type WildcardRate } from '../../domain/growth';
 import { generatePlan, LENGTH_PRESETS, REST_ID, sortByDifficulty, withRestDays } from '../../domain/planner';
@@ -170,10 +171,13 @@ export function PlanBuilder({ draft, onChange, equipment, startDate, stage = 'ea
                     type="button"
                     aria-pressed={on}
                     onClick={() => update({ tracks: on ? draft.tracks.filter((x) => x !== t.id) : [...draft.tracks, t.id] })}
-                    className={clsx('rounded-xl border px-3.5 py-2.5 text-left transition-colors', on ? 'border-slate bg-slate-soft' : 'border-line bg-surface hover:border-line-strong')}
+                    className={clsx('flex items-start gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors', on ? 'border-slate bg-slate-soft' : 'border-line bg-surface hover:border-line-strong')}
                   >
-                    <span className={clsx('block text-[14px]', on && 'font-medium text-slate')}>{t.title}</span>
-                    <span className="mt-0.5 block text-[12px] leading-snug text-ink-3">{t.blurb}</span>
+                    <TrackSymbol track={t.id} className={clsx('mt-0.5 size-7', on ? 'text-slate' : 'text-ink-2')} />
+                    <span className="min-w-0">
+                      <span className={clsx('block text-[14px]', on && 'font-medium text-slate')}>{t.title}</span>
+                      <span className="mt-0.5 block text-[12px] leading-snug text-ink-3">{t.blurb}</span>
+                    </span>
                   </button>
                 );
               })}

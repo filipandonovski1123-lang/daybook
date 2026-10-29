@@ -19,6 +19,7 @@ import { HabitRow } from '../habits/HabitRow';
 import { MissedAcknowledgement } from './MissedAcknowledgement';
 import { RestDayPanel } from './RestDay';
 import { challengeLabel } from '../../data/tracks';
+import { TrackSymbol } from '../../components/TrackSymbol';
 
 export function TodayPage() {
   const { data, today } = useApp();
@@ -196,7 +197,10 @@ function Headline({ view, challenge, day, isToday }: { view: ProgramView; challe
       <h1 className="font-display text-[34px] leading-[1.08] md:text-[44px]">{challenge.title}</h1>
       <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-ink-2">{challenge.objective}</p>
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[12.5px] text-ink-3">
-        <span>{challengeLabel(challenge)}</span>
+        <span className="inline-flex items-center gap-1.5">
+          <TrackSymbol track={challenge.track} />
+          {challengeLabel(challenge)}
+        </span>
         <span aria-hidden>·</span>
         <span>~{hours(challenge.estimatedMinutes)}</span>
         <StatusBadge status={status} />
