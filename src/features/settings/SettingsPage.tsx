@@ -5,7 +5,8 @@ import { Badge, Button, Card, Checkbox, ConfirmDialog, Dialog, Field, Input, Pag
 import { EQUIPMENT } from '../../data/challenges';
 import { LIFE_STAGES } from '../../data/tracks';
 import { changeStartDate, programHasStarted, updateReminder, updateSettings } from '../../db/actions';
-import { deleteAllData, exportData, importData, parseBackup, type ParseResult } from '../../db/backup';
+import { deleteAllData, importData, parseBackup, type ParseResult } from '../../db/backup';
+import { saveBackup } from '../../lib/backupFile';
 import { formatDate, formatInstant, isValidIso } from '../../domain/dates';
 import { buildIcs } from '../../domain/ics';
 import { REMINDER_LABEL, upcomingSchedule } from '../../domain/reminders';
@@ -294,6 +295,8 @@ function RemindersSection() {
 }
 
 function DataSection() {
+  const { data } = useApp();
+  const lastBackup = data.settings.lastBackupAt;
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [includeFiles, setIncludeFiles] = useState(true);
@@ -301,10 +304,7 @@ function DataSection() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteText, setDeleteText] = useState('');
   const [storage, setStorage] = useState<{ usage?: number; quota?: number; persisted?: boolean } | null>(null);
-  const exp = useAction(async () => {
-    const b = await exportData(includeFiles);
-    downloadText(`daybook-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(b), 'application/json');
-  }, { success: 'Backup downloaded.' });
+  const exp = useAction(() => saveBackup(includeFiles), { success: 'Backup downloaded.' });
   const imp = useAction(async () => {
     if (parsed?.ok) await importData(parsed.backup);
   }, { success: 'Backup restored.' });
@@ -336,7 +336,7 @@ function DataSection() {
   const mb = (b?: number) => (b === undefined ? '?' : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
   return (
-    <Section title="Your data" description="Stored in this browser’s IndexedDB on this device only. No accounts, analytics or trackers. Clearing site data in your browser deletes it — export a backup regularly.">
+    <Section title="Your data" description={`Stored in this browser’s IndexedDB on this device only. No accounts, analytics or trackers. Clearing site data in your browser deletes it — export a backup regularly. ${lastBackup ? `Last backup: ${formatInstant(lastBackup, data.settings.timezone)}.` : "No backup saved yet."}`}>
       {storage && (
         <p className="mb-4 flex items-center gap-2 text-xs text-ink-3">
           <HardDrive className="size-3.5" /> Using {mb(storage.usage)} of {mb(storage.quota)} available · {storage.persisted ? 'protected from automatic eviction' : 'browser may evict under storage pressure'}
@@ -350,7 +350,7 @@ function DataSection() {
           <Checkbox checked={includeFiles} onChange={setIncludeFiles} label="Include photos & files" />
         </div>
         <div>
-          <input ref={fileRef} type="file" accept="application/json,.json" className="sr-only" id="import-file" onChange={(e) => void pick(e.target.files?.[0])} />
+          <input ref={fileRef} type="file" accept="application/json,.json" className="sr-only" id="import-file" aria-label="Choose a backup file to restore" onChange={(e) => void pick(e.target.files?.[0])} />
           <Button icon={<Upload className="size-4" />} onClick={() => fileRef.current?.click()}>
             Import backup…
           </Button>

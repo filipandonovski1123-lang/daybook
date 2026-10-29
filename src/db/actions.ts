@@ -2,6 +2,7 @@ import { buildChallenges, dayId, instantiate } from '../data/challenges';
 import { customToItem, getLibraryItem, type LibraryItem } from '../data/library';
 import { REST_ID } from '../domain/planner';
 import { buildHabits } from '../data/habits';
+import { BACKUP_SNOOZE } from '../domain/backupReminder';
 import { addDays, detectTimeZone, isValidIso, isValidTimeZone, todayIn } from '../domain/dates';
 import { entryId, isPlannedOn, statusFor, type EntryInput } from '../domain/habits';
 import { endDateFor, isFuture } from '../domain/schedule';
@@ -51,10 +52,13 @@ export function defaultSettings(now = Date.now()): Settings {
     hardMode: false,
     reducedMotion: 'system',
     hideSensitiveOnToday: false,
-    equipment: [],
+    // Nearly everyone has these; the rest is ticked in Settings so setup stays short.
+    equipment: ['recorder', 'camera', 'kitchen'],
     constraints: '',
     onboarded: false,
     lifeStage: 'early',
+    lastBackupAt: null,
+    backupSnoozedUntil: null,
     createdAt: now,
   };
 }
@@ -214,6 +218,14 @@ export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>): Prom
   if (patch.timezone !== undefined && !isValidTimeZone(patch.timezone)) throw new UserError('Unknown timezone.');
   const n = await db.settings.update('settings', patch);
   if (!n) throw new UserError('Settings missing — reload the app.');
+}
+
+export async function markBackedUp(now = Date.now()): Promise<void> {
+  await updateSettings({ lastBackupAt: now, backupSnoozedUntil: null });
+}
+
+export async function snoozeBackupReminder(now = Date.now()): Promise<void> {
+  await updateSettings({ backupSnoozedUntil: now + BACKUP_SNOOZE });
 }
 
 /** Has the program begun? Then date changes need explicit confirmation. */

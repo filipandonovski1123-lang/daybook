@@ -215,7 +215,7 @@ describe('growth plans (tracks + wildcards)', () => {
       for (let i = 1; i < 8; i++) expect(steps[i]!.difficulty, `${t.id} step ${i + 1}`).toBeGreaterThanOrEqual(steps[i - 1]!.difficulty);
     }
     const earn = getLibraryItem('money-7')!;
-    expect(instantiate(earn, 1, 0, 'student').title).toBe('Earn Your First $50');
+    expect(instantiate(earn, 1, 0, 'student').title).toBe('Earn Your First Real Money');
     expect(instantiate(earn, 1, 0, 'early').title).toBe(earn.title);
     expect(instantiate(earn, 1, 0, 'student').track).toBe('money');
   });

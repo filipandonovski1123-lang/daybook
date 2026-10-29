@@ -35,21 +35,24 @@ describe('app', () => {
     expect(screen.getByLabelText('Start date')).toHaveValue(tomorrow);
     expect(screen.getByText(/Day 1:/)).toBeInTheDocument();
 
-    // Equipment → Challenges (a generated plan is ready) → Rhythm → Habits → Reminders → Mode
-    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    // Challenges (a generated plan is ready) → Habits → Reminders
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByRole('heading', { name: 'Your plan' })).toBeInTheDocument();
     await user.click(screen.getByRole('radio', { name: /^Signature 30/ }));
     expect(screen.getAllByRole('button', { name: /^Swap day/ })).toHaveLength(30);
     await user.click(screen.getByRole('radio', { name: '14' }));
     expect(screen.getAllByRole('button', { name: /^Swap day/ })).toHaveLength(14);
-    for (let i = 0; i < 4; i++) await user.click(screen.getByRole('button', { name: 'Continue' }));
-    await user.click(screen.getByRole('radio', { name: /^Hard Mode/ }));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    // New users start with a few habits; more are one tap away.
+    expect(screen.getByRole('checkbox', { name: /Sleep/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Room reset/ })).not.toBeChecked();
+    await user.click(screen.getByRole('checkbox', { name: /Room reset/ }));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
     await user.click(screen.getByRole('button', { name: 'Start my program' }));
 
     await screen.findByText(/starts in 1 day/);
     expect((await db.program.get('program'))?.startDate).toBe(tomorrow);
-    expect((await db.settings.get('settings'))?.hardMode).toBe(true);
+    expect((await db.settings.get('settings'))?.hardMode).toBe(false);
     expect((await db.program.get('program'))?.length).toBe(14);
     expect(await db.challenges.count()).toBe(14);
     // Hard Mode bar only appears once the program is active.
@@ -63,6 +66,7 @@ describe('app', () => {
   }, 20_000); // Full onboarding walk-through; slow on busy machines.
 
   it('keeps the private habit discreet and lets it be hidden from Today', async () => {
+    await db.habits.update('personal', { enabled: true });
     await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), length: 30, mode: 'signature', themes: [], curve: 'steady', restEvery: 0, tracks: [], timeBudget: 'medium', wildcards: 'some', includeFun: true, startedAt: null, history: [] });
     await updateSettings({ onboarded: true });
     render(<App />);

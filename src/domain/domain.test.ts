@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildChallenges, CHALLENGE_COUNT } from '../data/challenges';
-import { buildHabits } from '../data/habits';
+import { buildHabits, STARTER_HABITS } from '../data/habits';
 import { checkPi, makeTest, PI_100, rng } from './arithmetic';
 import { checkCompletion, improvementPct, personalBests } from './criteria';
 import { addDays, diffDays, endOfDayEpoch, hoursBetween, inWindow, isValidIso, todayIn, weekdayOf, zonedToEpoch } from './dates';
@@ -11,6 +11,7 @@ import { dueReminders, reminderMessage, upcomingSchedule } from './reminders';
 import { displayStatus, endDateFor, isFuture, programDayFor, programPhase, scheduledDateFor } from './schedule';
 import { challengeCounts, deriveAchievements, mostSkipped, statusesFor, weeklyStats } from './stats';
 import { challengeSchema, habitSchema, type Attempt, type ChallengeProgress, type HabitEntry, type Reminder } from './types';
+import { backupDue } from './backupReminder';
 
 const SYD = 'Australia/Sydney';
 
@@ -160,7 +161,7 @@ describe('seed data', () => {
     const personal = habits.find((h) => h.id === 'personal');
     expect(personal?.sensitive).toBe(true);
     expect(personal?.visibility).toBe('discreet');
-    expect(habits.every((h) => h.enabled)).toBe(true);
+    expect(habits.filter((h) => h.enabled).map((h) => h.id)).toEqual(STARTER_HABITS); // new users start small
   });
 });
 
@@ -244,7 +245,7 @@ describe('criteria & personal bests', () => {
 });
 
 describe('habits', () => {
-  const habits = buildHabits();
+  const habits = buildHabits().map((h) => ({ ...h, enabled: true }));
   const h = (id: string) => habits.find((x) => x.id === id)!;
 
   it('scores inputs without rewarding less sleep', () => {
@@ -281,7 +282,7 @@ describe('habits', () => {
 
 describe('stats & achievements', () => {
   const challenges = buildChallenges(0);
-  const habits = buildHabits();
+  const habits = buildHabits().map((h) => ({ ...h, enabled: true }));
   const start = '2026-11-20';
   const prog = (id: string, status: ChallengeProgress['status'], completedAt: number | null): ChallengeProgress => ({
     id, challengeId: id, status, rescheduledTo: null, startedAt: completedAt, completedAt, completedOn: null, completedEarly: false, pausedAt: null, activeSince: null, activeMs: 0, notes: '', metrics: {}, checked: [], prepDone: [], selfAssessment: null, missedAck: null, history: [], updatedAt: 0,
@@ -390,5 +391,25 @@ describe('ics, arithmetic, pi', () => {
     const wrong = checkPi('14159265350');
     expect(wrong.streak).toBe(10);
     expect(wrong.firstErrorAt).toBe(11);
+  });
+});
+
+describe('backup reminder', () => {
+  const day = 86_400_000;
+  const created = 1_700_000_000_000;
+  const s = { createdAt: created, lastBackupAt: null as number | null, backupSnoozedUntil: null as number | null };
+
+  it('waits a week and needs something worth keeping', () => {
+    expect(backupDue(s, true, created + 6 * day)).toBe(false);
+    expect(backupDue(s, false, created + 30 * day)).toBe(false);
+    expect(backupDue(s, true, created + 7 * day)).toBe(true);
+  });
+
+  it('asks again two weeks after the last backup and respects "Later"', () => {
+    const backed = { ...s, lastBackupAt: created + 10 * day };
+    expect(backupDue(backed, true, created + 23 * day)).toBe(false);
+    expect(backupDue(backed, true, created + 24 * day)).toBe(true);
+    expect(backupDue({ ...backed, backupSnoozedUntil: created + 30 * day }, true, created + 25 * day)).toBe(false);
+    expect(backupDue({ ...backed, backupSnoozedUntil: created + 30 * day }, true, created + 30 * day)).toBe(true);
   });
 });

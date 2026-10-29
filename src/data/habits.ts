@@ -52,6 +52,9 @@ const SEEDS: HabitSeed[] = [
   { id: 'screens-away', name: 'Screens away before bed', category: 'Sleep', kind: 'reduce', input: 'yesno', section: 'evening', days: ALL, description: 'Screens put away roughly 30–60 minutes before bedtime.' },
 ];
 
+/** Switched on for new users, so Day 1 isn't a wall of tasks. Everything else is one tap away. */
+export const STARTER_HABITS = ['sleep', 'reading', 'focus', 'fitness'];
+
 export function buildHabits(): Habit[] {
   return SEEDS.map((s, i) => ({
     discreetName: null,
@@ -62,7 +65,7 @@ export function buildHabits(): Habit[] {
     definition: '',
     visibility: 'normal',
     sensitive: false,
-    enabled: true,
+    enabled: STARTER_HABITS.includes(s.id),
     config: {},
     ...s,
     order: i,

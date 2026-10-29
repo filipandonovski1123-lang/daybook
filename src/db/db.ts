@@ -21,7 +21,7 @@ import type {
 } from '../domain/types';
 
 /** Bump with a new `this.version(n)` block (and an `.upgrade()` if data needs reshaping). */
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export class ChallengeDB extends Dexie {
   settings!: EntityTable<Settings, 'id'>;
@@ -130,6 +130,15 @@ export class ChallengeDB extends Dexie {
         await tx.table('challenges').toCollection().modify((c: Partial<Challenge>) => {
           c.track ??= null;
           c.step ??= null;
+        });
+      });
+    // v6: backup reminder bookkeeping.
+    this.version(6)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table('settings').toCollection().modify((s: Partial<Settings>) => {
+          s.lastBackupAt ??= null;
+          s.backupSnoozedUntil ??= null;
         });
       });
   }

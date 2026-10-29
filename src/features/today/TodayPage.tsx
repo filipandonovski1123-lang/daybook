@@ -19,6 +19,7 @@ import { ChallengeActions, StatusBadge } from '../challenges/shared';
 import { HabitRow } from '../habits/HabitRow';
 import { MissedAcknowledgement } from './MissedAcknowledgement';
 import { RestDayPanel } from './RestDay';
+import { BackupNudge } from './BackupNudge';
 import { challengeLabel } from '../../data/tracks';
 import { TrackSymbol } from '../../components/TrackSymbol';
 
@@ -89,6 +90,7 @@ export function TodayPage() {
       {isToday && (
         <div className="mt-5 space-y-3 empty:hidden">
           <ReminderBanners />
+          <BackupNudge />
           {hard && view.phase === 'active' && <HardModeLine view={view} />}
           {view.unacknowledgedMissed.length > 0 && <MissedAcknowledgement challenges={view.unacknowledgedMissed} required={hard} />}
         </div>

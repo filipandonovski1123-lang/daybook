@@ -7,7 +7,7 @@ No account, no server, no analytics. Everything is stored in your browser on you
 ## Challenges and plans
 
 - **Growth tracks (default):** 14 skill tracks (focus, fitness, energy, public speaking, writing, relationships, courage, money, career, learning, character, direction, resilience, self-reliance), each an 8-step ladder from a first small step to a real capstone. Source: `src/data/tracks.ts`.
-- **Life stage:** student, starting out or established (set in onboarding and Settings). It picks the suggested tracks and rewords some steps (e.g. a student's money capstone is "Earn Your First $50").
+- **Life stage:** student, starting out or established (set in onboarding and Settings). It picks the suggested tracks and rewords some steps (e.g. a student's money capstone is "Earn Your First Real Money").
 - **Growth plans:** `src/domain/growth.ts` weaves the chosen tracks together (each keeps its order, so steps build on each other), fits days to the chosen time per day (15–30 min, 30–60 min or 1–3 hours; a track's final step may run longer), and mixes in wildcard days (none / some / lots) from `src/data/wildcards.ts` and, optionally, the fun pack.
 - **Fun pack:** the original one-off challenges (juggling, origami, puzzles…) in `src/data/challenges.ts` and `src/data/libraryExtra.ts`. The Library can filter by Growth / Fun.
 - **Signature 30:** the classic fun 30-day program, kept as a preset.
@@ -78,6 +78,7 @@ Stored: settings, program dates (plus the history of date changes), the 30 chall
 No location data is collected, and nothing is sent anywhere. The production build ships a strict Content-Security-Policy (`connect-src 'self'`).
 
 - **Export:** Settings → Your data → Export backup (JSON, optionally including files).
+- **Backup reminder:** once you have a week of progress, Today suggests saving a backup every two weeks ("Later" hides it for a week). Settings shows when the last backup was saved.
 - **Import:** validated against the full schema before anything changes. An invalid file changes nothing.
 - **Delete:** Settings → Your data → Delete all data (type DELETE to confirm).
 

@@ -399,7 +399,7 @@ describe('growth plans', () => {
     expect(program?.mode).toBe('growth');
     expect(program?.tracks).toEqual(['money', 'speaking']);
     const day = (await db.challenges.toArray()).find((c) => c.libraryId === 'money-7')!;
-    expect(day.title).toBe('Earn Your First $50');
+    expect(day.title).toBe('Earn Your First Real Money');
     expect(day.track).toBe('money');
     expect(day.step).toBe(7);
   });

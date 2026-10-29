@@ -46,6 +46,10 @@ export const settingsSchema = z.object({
   onboarded: z.boolean(),
   /** Tailors challenge wording: at school/uni, early career, or established. */
   lifeStage: lifeStage.default('early'),
+  /** When a backup file was last saved (null = never). Drives the gentle backup reminder. */
+  lastBackupAt: timestamp.nullable().default(null),
+  /** "Later" on the backup reminder hides it until this time. */
+  backupSnoozedUntil: timestamp.nullable().default(null),
   createdAt: timestamp,
 });
 export type Settings = z.infer<typeof settingsSchema>;

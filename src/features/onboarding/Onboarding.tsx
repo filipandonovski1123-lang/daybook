@@ -1,10 +1,9 @@
 import clsx from 'clsx';
-import { ArrowLeft, ArrowRight, Bell, CalendarDays, Check, Dumbbell, Moon, Package, Shield, Footprints, Target } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bell, CalendarDays, Check, Dumbbell, Footprints, Target } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Backdrop } from '../../components/Scene';
 import { Logo } from '../../components/Shell';
-import { Badge, Button, Card, Checkbox, Field, Input, Switch, Textarea } from '../../components/ui';
-import { EQUIPMENT } from '../../data/challenges';
+import { Badge, Button, Card, Checkbox, Field, Input, Switch } from '../../components/ui';
 import { LIFE_STAGES, RECOMMENDED_TRACKS } from '../../data/tracks';
 import { completeOnboarding, type OnboardingInput } from '../../db/actions';
 import { addDays, DEFAULT_TIMEZONE, formatDate, isValidIso, isValidTimeZone, todayIn, weekdayOf } from '../../domain/dates';
@@ -12,9 +11,10 @@ import { displayName } from '../../domain/habits';
 import { useAction, useApp } from '../../lib/appData';
 import { notificationSupport, requestPermission } from '../../lib/notifications';
 import { useLibrary } from '../../lib/library';
-import { buildPlan, newDraft, PlanBuilder, type PlanDraft } from '../plan/PlanBuilder';
+import { newDraft, PlanBuilder, type PlanDraft } from '../plan/PlanBuilder';
 
-const STEPS = ['Welcome', 'Start date', 'Equipment', 'Challenges', 'Daily rhythm', 'Habits', 'Reminders', 'Mode'] as const;
+// Equipment, daily rhythm and Hard Mode have sensible defaults and live in Settings, so setup stays short.
+const STEPS = ['Welcome', 'Start date', 'Challenges', 'Habits', 'Reminders'] as const;
 
 export function Onboarding() {
   const { data } = useApp();
@@ -57,11 +57,7 @@ export function Onboarding() {
 
   const dateError = form.startDate && !isValidIso(form.startDate) ? 'Enter a valid date.' : null;
   const canNext = cur === 'Start date' ? !!form.startDate && !dateError && isValidTimeZone(form.timezone) : cur === 'Challenges' ? draft.plan.length >= 3 : true;
-  const next = () => {
-    // Equipment is known now, so build the suggested plan around it.
-    if (cur === 'Equipment' && draft.mode !== 'signature') setDraft({ ...draft, plan: buildPlan(draft, form.equipment, lib.items) });
-    setStep((s) => s + 1);
-  };
+  const next = () => setStep((s) => s + 1);
 
   return (
     <div className="relative isolate min-h-dvh px-4 py-8 md:py-14">
@@ -154,73 +150,35 @@ export function Onboarding() {
             </StepBody>
           )}
 
-          {cur === 'Daily rhythm' && (
-            <StepBody icon={<Moon />} title="Your daily rhythm" lead="Used to time reminders and set a realistic sleep target.">
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Typical wake-up" htmlFor="ob-wake">
-                  <Input id="ob-wake" type="time" value={form.wakeTime} onChange={(e) => set('wakeTime', e.target.value)} />
-                </Field>
-                <Field label="Usual bedtime" htmlFor="ob-bed">
-                  <Input id="ob-bed" type="time" value={form.bedtime} onChange={(e) => set('bedtime', e.target.value)} />
-                </Field>
-                <Field label="Morning reminder" htmlFor="ob-morning">
-                  <Input id="ob-morning" type="time" value={form.morningTime} onChange={(e) => set('morningTime', e.target.value)} />
-                </Field>
-                <Field label="Evening check-in" htmlFor="ob-evening">
-                  <Input id="ob-evening" type="time" value={form.eveningTime} onChange={(e) => set('eveningTime', e.target.value)} />
-                </Field>
-                <Field label="Sleep target (optional)" htmlFor="ob-sleep" hint="8–10 hours recommended" className="col-span-2">
-                  <Input
-                    id="ob-sleep"
-                    type="number"
-                    inputMode="decimal"
-                    min={6}
-                    max={11}
-                    step={0.5}
-                    value={form.sleepTargetHours ?? ''}
-                    onChange={(e) => set('sleepTargetHours', e.target.value === '' ? null : Math.min(12, Math.max(4, Number(e.target.value))))}
-                  />
-                </Field>
-              </div>
-            </StepBody>
-          )}
-
           {cur === 'Habits' && (
-            <StepBody icon={<Dumbbell />} title="Which habits do you want?" lead="All are on by default. They rotate through the week, so most days only have a handful. You can edit any of them later.">
+            <StepBody icon={<Dumbbell />} title="Pick a few habits" lead="Start small: four are on to begin with. Add more whenever you like from the Habits page.">
               <HabitPicker enabled={form.enabledHabits} onChange={(v) => set('enabledHabits', v)} />
-            </StepBody>
-          )}
-
-          {cur === 'Equipment' && (
-            <StepBody icon={<Package />} title="Equipment & access" lead="Tick what you have. Suggested challenges favour what you own; anything that needs something else is flagged so you can sort it out in advance.">
-              <div className="grid gap-2.5 sm:grid-cols-2">
-                {Object.entries(EQUIPMENT).map(([id, label]) => (
-                  <Checkbox key={id} checked={form.equipment.includes(id)} onChange={(on) => set('equipment', on ? [...form.equipment, id] : form.equipment.filter((x) => x !== id))} label={label} />
-                ))}
-              </div>
-              <Field label="Other constraints (optional)" htmlFor="ob-constraints" className="mt-5">
-                <Textarea id="ob-constraints" value={form.constraints} maxLength={2000} onChange={(e) => set('constraints', e.target.value)} placeholder="e.g. no access to a table tennis table until week 2; shoulder niggle" />
-              </Field>
             </StepBody>
           )}
 
           {cur === 'Reminders' && (
             <StepBody icon={<Bell />} title="Reminders" lead="A morning nudge with today’s challenge, and an evening check-in. Notification text never includes habit names.">
               <div className="space-y-3">
-                <Switch checked={form.notifications} onChange={(v) => set('notifications', v)} label="Morning and evening reminders" description={`At ${form.morningTime} and ${form.eveningTime}, your local time.`} />
+                <Switch checked={form.notifications} onChange={(v) => set('notifications', v)} label="Morning and evening reminders" description="Today’s challenge in the morning, a check-in in the evening." />
+                {form.notifications && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Morning" htmlFor="ob-morning">
+                      <Input id="ob-morning" type="time" value={form.morningTime} onChange={(e) => set('morningTime', e.target.value)} />
+                    </Field>
+                    <Field label="Evening" htmlFor="ob-evening">
+                      <Input id="ob-evening" type="time" value={form.eveningTime} onChange={(e) => set('eveningTime', e.target.value)} />
+                    </Field>
+                  </div>
+                )}
                 <Switch checked={form.bedtimeReminder} onChange={(v) => set('bedtimeReminder', v)} label="Bedtime wind-down reminder" description="30 minutes before your usual bedtime." disabled={!form.notifications} />
+                {form.notifications && form.bedtimeReminder && (
+                  <Field label="Usual bedtime" htmlFor="ob-bed">
+                    <Input id="ob-bed" type="time" value={form.bedtime} onChange={(e) => set('bedtime', e.target.value)} />
+                  </Field>
+                )}
               </div>
               {form.notifications && <PermissionCard permission={permission} onRequest={async () => setPermission(await requestPermission())} />}
-            </StepBody>
-          )}
-
-          {cur === 'Mode' && (
-            <StepBody icon={<Shield />} title="Choose your mode" lead="You can switch at any time in Settings.">
-              <div className="grid gap-3" role="radiogroup" aria-label="Mode">
-                <ModeCard selected={!form.hardMode} onSelect={() => set('hardMode', false)} title="Standard" body="Clear tracking, friendly nudges. Completion still has to be recorded honestly." />
-                <ModeCard selected={form.hardMode} onSelect={() => set('hardMode', true)} title="Hard Mode" badge="Accountability" body="End-of-day countdown, open commitments front and centre, direct coaching. Completion only counts when the criteria are met, and missed days must be acknowledged before moving on." />
-              </div>
-              <p className="mt-4 text-xs leading-relaxed text-ink-3">Either way: rest, illness, injury and genuine conflicts are valid reasons to adjust the plan. The app never asks you to trade sleep, food or recovery for a tick.</p>
+              <p className="mt-4 text-xs leading-relaxed text-ink-3">Equipment, Hard Mode and your daily rhythm are in Settings whenever you want them.</p>
             </StepBody>
           )}
 

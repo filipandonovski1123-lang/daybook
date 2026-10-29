@@ -30,7 +30,11 @@ export default defineConfig({
       filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectRegister: false,
-      injectManifest: { globPatterns: ['**/*.{js,css,html,svg,png,jpg,webmanifest,woff2}'] },
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,webmanifest,woff2}'],
+        // Fetched by the browser only when needed: extended-alphabet fonts and install-time icons.
+        globIgnores: ['**/*latin-ext*', 'icons/seal-icon-*', 'icons/seal-apple-touch-icon.png', 'icons/seal-favicon-192*'],
+      },
       devOptions: { enabled: false },
       manifest: {
         name: 'Daybook',
