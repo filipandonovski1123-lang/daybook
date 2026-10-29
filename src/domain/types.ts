@@ -28,6 +28,10 @@ export type Reminder = z.infer<typeof reminderSchema>;
 export const lifeStage = z.enum(['student', 'early', 'established']);
 export type LifeStage = z.infer<typeof lifeStage>;
 
+/** Colour theme. Editorial follows light/dark; the others are dark-only. */
+export const palette = z.enum(['editorial', 'midnight', 'forest', 'athletic']);
+export type Palette = z.infer<typeof palette>;
+
 export const settingsSchema = z.object({
   id: z.literal('settings'),
   displayName: z.string().max(60),
@@ -37,6 +41,7 @@ export const settingsSchema = z.object({
   bedtime: localTime,
   quietHours: z.object({ enabled: z.boolean(), start: localTime, end: localTime }),
   theme: z.enum(['dark', 'light', 'system']),
+  palette: palette.default('editorial'),
   hardMode: z.boolean(),
   reducedMotion: z.enum(['system', 'reduce', 'full']),
   /** Hide sensitive habit goals from the Today screen (still trackable in Habits). */

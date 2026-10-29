@@ -49,6 +49,7 @@ export function defaultSettings(now = Date.now()): Settings {
     bedtime: '22:30',
     quietHours: { enabled: true, start: '22:30', end: '07:00' },
     theme: 'light',
+    palette: 'editorial',
     hardMode: false,
     reducedMotion: 'system',
     hideSensitiveOnToday: false,

@@ -14,6 +14,7 @@ import { SummaryPage } from './features/summary/SummaryPage';
 import { TodayPage } from './features/today/TodayPage';
 import { AppDataProvider, useApp } from './lib/appData';
 import { CompletionMoment } from './lib/motion';
+import { setPalette } from './lib/palette';
 import { ReminderScheduler } from './lib/reminderScheduler';
 import { ToastProvider } from './lib/toast';
 
@@ -77,16 +78,20 @@ function PageTransition({ children }: { children: ReactNode }) {
 
 function useThemeSync() {
   const { data } = useApp();
-  const { theme, reducedMotion } = data.settings;
+  const { theme, palette, reducedMotion } = data.settings;
   useEffect(() => {
     const root = document.documentElement;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
-      const dark = theme === 'dark' || (theme === 'system' && mq.matches);
+      // Midnight and Forest are dark-only; Editorial follows the light/dark setting.
+      const dark = palette !== 'editorial' || theme === 'dark' || (theme === 'system' && mq.matches);
       root.classList.toggle('dark', dark);
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#141618' : '#f2f0eb');
+      root.dataset.palette = palette;
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', getComputedStyle(root).getPropertyValue('--bg').trim() || (dark ? '#141618' : '#f2f0eb'));
+      setPalette(palette);
       try {
         localStorage.setItem('theme', dark ? 'dark' : 'light');
+        localStorage.setItem('palette', palette);
       } catch {
         /* ignore */
       }
@@ -94,7 +99,7 @@ function useThemeSync() {
     apply();
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);
-  }, [theme]);
+  }, [theme, palette]);
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle('reduce-motion', reducedMotion === 'reduce');

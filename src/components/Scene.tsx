@@ -2,10 +2,12 @@ import clsx from 'clsx';
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
 import type { Quote } from '../data/quotes';
+import { usePalette } from '../lib/palette';
 
 /**
- * Editorial photography. Photos live in public/images/. If a photo hasn't been added, nothing is
- * rendered — no placeholder art — and layouts close up around the missing image.
+ * Editorial photography. Photos live in public/images/, with optional per-theme versions in
+ * public/images/<theme>/ (same file names). A missing theme photo falls back to the default one; if
+ * that's missing too, nothing is rendered — no placeholder art — and layouts close up around it.
  */
 export type SceneKind = 'coast' | 'peaks' | 'ridge';
 export type BackdropKind = 'welcome' | 'habits' | 'calendar' | 'progress' | 'reflection';
@@ -51,13 +53,24 @@ function subscribe(fn: () => void) {
   return () => listeners.delete(fn);
 }
 
+/** The theme's own version of a photo if it exists, otherwise the default. */
+function useThemedImage(url: string): { url: string; state: Probe } {
+  const palette = usePalette();
+  const themed = palette === 'editorial' ? url : url.replace('./images/', `./images/${palette}/`);
+  const themedState = useImage(themed);
+  const baseState = useImage(url);
+  if (themedState === 'ok') return { url: themed, state: 'ok' };
+  if (themedState === 'loading') return { url, state: 'loading' };
+  return { url, state: baseState };
+}
+
 /** Whether the photo for `kind` exists. Checked once per session and shared. */
 export function usePhoto(kind: SceneKind): Probe {
-  return useImage(PHOTO[kind]);
+  return useThemedImage(PHOTO[kind]).state;
 }
 
 export function Scene({ kind, className, hero = false }: { kind: SceneKind; className?: string; hero?: boolean }) {
-  const photo = usePhoto(kind);
+  const { url, state: photo } = useThemedImage(PHOTO[kind]);
   const layer = useRef<HTMLDivElement>(null);
 
   // Hero only: gentle parallax while it's on screen. Written straight to the style (no re-renders).
@@ -87,7 +100,7 @@ export function Scene({ kind, className, hero = false }: { kind: SceneKind; clas
   return (
     <div className={clsx('relative overflow-hidden bg-surface-3', className)} aria-hidden>
       <div ref={layer} className={clsx('absolute inset-x-0 will-change-transform', hero ? '-top-[10%] h-[120%]' : 'inset-y-0')}>
-        <img src={PHOTO[kind]} alt="" className={clsx('size-full object-cover', kind === 'coast' && 'object-[22%_center]', hero && 'animate-hero')} />
+        <img src={url} alt="" className={clsx('size-full object-cover', kind === 'coast' && 'object-[22%_center]', hero && 'animate-hero')} />
       </div>
     </div>
   );
@@ -99,7 +112,7 @@ export function QuoteCard({ quote, scene, className, layout = 'side' }: { quote:
     return (
       <figure className={clsx('relative overflow-hidden rounded-xl bg-surface-2', className)}>
         <Scene kind={scene} className="absolute inset-0 opacity-90" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#eceae5] via-[#eceae5]/80 to-transparent dark:from-[#212428] dark:via-[#212428]/80" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-r from-surface-2 via-surface-2/80 to-transparent" aria-hidden />
         <div className="relative max-w-[80%] p-5 sm:max-w-[62%]">
           <blockquote className="font-display text-[19px] leading-snug text-ink">“{quote.text}”</blockquote>
           <Attribution quote={quote} />
@@ -132,8 +145,7 @@ function Attribution({ quote }: { quote: Quote }) {
  * skipped entirely if the file is missing. `full` covers the whole screen (onboarding).
  */
 export function Backdrop({ kind, full = false }: { kind: BackdropKind; full?: boolean }) {
-  const url = BACKDROP[kind];
-  const photo = useImage(url);
+  const { url, state: photo } = useThemedImage(BACKDROP[kind]);
   if (photo !== 'ok') return null;
   const mask = full
     ? 'linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.3) 100%)'

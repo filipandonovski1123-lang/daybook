@@ -21,7 +21,7 @@ import type {
 } from '../domain/types';
 
 /** Bump with a new `this.version(n)` block (and an `.upgrade()` if data needs reshaping). */
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export class ChallengeDB extends Dexie {
   settings!: EntityTable<Settings, 'id'>;
@@ -139,6 +139,14 @@ export class ChallengeDB extends Dexie {
         await tx.table('settings').toCollection().modify((s: Partial<Settings>) => {
           s.lastBackupAt ??= null;
           s.backupSnoozedUntil ??= null;
+        });
+      });
+    // v7: colour themes.
+    this.version(7)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table('settings').toCollection().modify((s: Partial<Settings>) => {
+          s.palette ??= 'editorial';
         });
       });
   }

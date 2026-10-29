@@ -404,3 +404,14 @@ describe('growth plans', () => {
     expect(day.step).toBe(7);
   });
 });
+
+describe('colour themes', () => {
+  it('new installs start on Editorial and the chosen style is saved', async () => {
+    await db.delete();
+    await db.open();
+    await A.ensureSeeded();
+    expect((await db.settings.get('settings'))?.palette).toBe('editorial');
+    await A.updateSettings({ palette: 'forest' });
+    expect((await db.settings.get('settings'))?.palette).toBe('forest');
+  });
+});

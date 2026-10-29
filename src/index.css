@@ -76,6 +76,117 @@
   color-scheme: dark;
 }
 
+/* Midnight — near-black, crisp sans headings, bright blue and green. Dark-only. */
+:root[data-palette='midnight'] {
+  --bg: #0b0d10;
+  --surface: #111419;
+  --surface-2: #161a20;
+  --surface-3: #1d222a;
+  --border: #1f242c;
+  --border-strong: #2c333d;
+  --text: #f3f5f8;
+  --text-2: #aab2bd;
+  --text-3: #8b939e;
+  --accent: #8fb4ff;
+  --accent-strong: #b3ccff;
+  --accent-soft: rgb(143 180 255 / 0.12);
+  --accent-ink: #0b0d10;
+  --slate: #7fa7ff;
+  --slate-soft: rgb(127 167 255 / 0.15);
+  --success: #3ddc97;
+  --success-soft: rgb(61 220 151 / 0.13);
+  --info: #7fa7ff;
+  --info-soft: rgb(127 167 255 / 0.13);
+  --warn: #f2b765;
+  --warn-soft: rgb(242 183 101 / 0.12);
+  --danger: #f2857c;
+  --danger-soft: rgb(242 133 124 / 0.12);
+  --violet: #b6a8ff;
+  --violet-soft: rgb(182 168 255 / 0.13);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 20px 40px -16px rgb(0 0 0 / 0.7);
+  --ring: rgb(127 167 255 / 0.45);
+  --chart-done: #4f8dff;
+  --chart-attempt: #e0a050;
+  --chart-single: #7fa7ff;
+  --chart-grid: #1b2027;
+  color-scheme: dark;
+}
+
+/* Forest — deep olive and charcoal, muted sage, earthy and grounded. Dark-only. */
+:root[data-palette='forest'] {
+  --bg: #111411;
+  --surface: #171b17;
+  --surface-2: #1c211c;
+  --surface-3: #242a23;
+  --border: #252b24;
+  --border-strong: #343c32;
+  --text: #ecebe2;
+  --text-2: #b7b9ab;
+  --text-3: #8f9385;
+  --accent: #a3b47f;
+  --accent-strong: #bccb9b;
+  --accent-soft: rgb(163 180 127 / 0.12);
+  --accent-ink: #111411;
+  --slate: #aebf8c;
+  --slate-soft: rgb(174 191 140 / 0.15);
+  --success: #aebf8c;
+  --success-soft: rgb(174 191 140 / 0.13);
+  --info: #9db5a8;
+  --info-soft: rgb(157 181 168 / 0.13);
+  --warn: #d1a865;
+  --warn-soft: rgb(209 168 101 / 0.12);
+  --danger: #d38b77;
+  --danger-soft: rgb(211 139 119 / 0.12);
+  --violet: #b5a9c6;
+  --violet-soft: rgb(181 169 198 / 0.13);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 20px 40px -16px rgb(0 0 0 / 0.7);
+  --ring: rgb(174 191 140 / 0.4);
+  --chart-done: #6f9450;
+  --chart-attempt: #e2b56f;
+  --chart-single: #aebf8c;
+  --chart-grid: #20261f;
+  color-scheme: dark;
+}
+
+/* Athletic — graphite with electric lime and cyan, bold tight headings. Dark-only. */
+:root[data-palette='athletic'] {
+  --bg: #0e0f10;
+  --surface: #151719;
+  --surface-2: #1b1e21;
+  --surface-3: #23272b;
+  --border: #24282c;
+  --border-strong: #343a40;
+  --text: #f4f6f2;
+  --text-2: #b0b4b8;
+  --text-3: #8e9398;
+  --accent: #c6f135;
+  --accent-strong: #d8ff5c;
+  --accent-soft: rgb(198 241 53 / 0.12);
+  --accent-ink: #0e0f10;
+  --slate: #c6f135;
+  --slate-soft: rgb(198 241 53 / 0.13);
+  --success: #c6f135;
+  --success-soft: rgb(198 241 53 / 0.12);
+  --info: #38c8f0;
+  --info-soft: rgb(56 200 240 / 0.13);
+  --warn: #f5b94e;
+  --warn-soft: rgb(245 185 78 / 0.12);
+  --danger: #ff7b6e;
+  --danger-soft: rgb(255 123 110 / 0.12);
+  --violet: #b6a8ff;
+  --violet-soft: rgb(182 168 255 / 0.13);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 20px 40px -16px rgb(0 0 0 / 0.75);
+  --ring: rgb(198 241 53 / 0.45);
+  --chart-done: #c6f135;
+  --chart-attempt: #38c8f0;
+  --chart-single: #c6f135;
+  --chart-grid: #1f2326;
+  color-scheme: dark;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -357,6 +468,18 @@ dialog[open]::backdrop {
 }
 
 /* Editorial type */
+/* Midnight swaps the serif for confident sans headings; Athletic goes bolder still. */
+:root[data-palette='midnight'] .font-display {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+:root[data-palette='athletic'] .font-display {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
 .font-display {
   font-family: var(--font-serif);
   font-optical-sizing: auto;

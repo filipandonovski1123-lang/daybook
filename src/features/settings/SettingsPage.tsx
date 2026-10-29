@@ -11,13 +11,20 @@ import { formatDate, formatInstant, isValidIso } from '../../domain/dates';
 import { buildIcs } from '../../domain/ics';
 import { REMINDER_LABEL, upcomingSchedule } from '../../domain/reminders';
 import { endDateFor } from '../../domain/schedule';
-import type { Reminder, Settings } from '../../domain/types';
+import type { Palette, Reminder, Settings } from '../../domain/types';
 import { errorMessage, useAction, useApp } from '../../lib/appData';
 import { downloadText } from '../../lib/download';
 import { notificationSupport, requestPermission, showSystemNotification } from '../../lib/notifications';
 import { useReminders } from '../../lib/reminderScheduler';
 import { useToast } from '../../lib/toast';
 import { TimezoneInput } from '../onboarding/Onboarding';
+
+const PALETTES: { value: Palette; label: string; body: string; swatch: string[] }[] = [
+  { value: 'editorial', label: 'Editorial', body: 'Warm paper, serif headings and slate blue. Light or dark.', swatch: ['#f2f0eb', '#2b333b', '#56718b'] },
+  { value: 'midnight', label: 'Midnight', body: 'Near-black with crisp headings and bright blue and green.', swatch: ['#0b0d10', '#8fb4ff', '#3ddc97'] },
+  { value: 'forest', label: 'Forest', body: 'Deep olive and charcoal with muted sage. Earthy and calm.', swatch: ['#111411', '#a3b47f', '#ecebe2'] },
+  { value: 'athletic', label: 'Athletic', body: 'Graphite with electric lime. Bold, sharp and high-energy.', swatch: ['#0e0f10', '#c6f135', '#38c8f0'] },
+];
 
 function Section({ title, children, description }: { title: string; description?: ReactNode; children: ReactNode }) {
   return (
@@ -84,10 +91,37 @@ export function SettingsPage() {
       </Section>
       <Section title="Appearance">
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="text-sm font-medium">Theme</span>
-            <Segmented label="Theme" value={s.theme} onChange={(v) => void save.run({ theme: v })} options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }, { value: 'system', label: 'System' }]} />
+          <div>
+            <span className="text-sm font-medium">Style</span>
+            <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Style">
+              {PALETTES.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={s.palette === o.value}
+                  onClick={() => void save.run({ palette: o.value })}
+                  className={`rounded-xl border p-3 text-left transition-colors ${s.palette === o.value ? 'border-slate bg-slate-soft' : 'border-line bg-surface-2 hover:border-line-strong'}`}
+                >
+                  <span className="flex gap-1" aria-hidden>
+                    {o.swatch.map((c) => (
+                      <span key={c} className="size-5 rounded-full border border-black/10" style={{ background: c }} />
+                    ))}
+                  </span>
+                  <span className="mt-2 block text-[14px] font-medium">{o.label}</span>
+                  <span className="mt-0.5 block text-[12px] leading-snug text-ink-3">{o.body}</span>
+                </button>
+              ))}
+            </div>
           </div>
+          {s.palette === 'editorial' ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm font-medium">Light or dark</span>
+              <Segmented label="Light or dark" value={s.theme} onChange={(v) => void save.run({ theme: v })} options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }, { value: 'system', label: 'System' }]} />
+            </div>
+          ) : (
+            <p className="text-xs text-ink-3">{PALETTES.find((o) => o.value === s.palette)?.label} is a dark style. Pick Editorial for a light version.</p>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-sm font-medium">Motion</span>
             <Segmented label="Motion" value={s.reducedMotion} onChange={(v) => void save.run({ reducedMotion: v })} options={[{ value: 'system', label: 'System' }, { value: 'reduce', label: 'Reduced' }, { value: 'full', label: 'Full' }]} />

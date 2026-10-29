@@ -9,6 +9,8 @@ import './index.css';
 // Apply the last-used theme before first paint (the real setting lives in IndexedDB).
 try {
   if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+  const palette = localStorage.getItem('palette');
+  if (palette === 'midnight' || palette === 'forest' || palette === 'athletic') document.documentElement.dataset.palette = palette;
 } catch {
   /* storage unavailable */
 }
