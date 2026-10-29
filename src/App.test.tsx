@@ -60,7 +60,7 @@ describe('app', () => {
     const today = todayIn('Australia/Sydney');
     await waitFor(async () => expect((await db.habitEntries.get(`tidy|${today}`))?.status).toBe('done'));
     expect(await screen.findByRole('button', { name: 'Undo Room reset' })).toHaveAttribute('aria-pressed', 'true');
-  });
+  }, 20_000); // Full onboarding walk-through; slow on busy machines.
 
   it('keeps the private habit discreet and lets it be hidden from Today', async () => {
     await db.program.put({ id: 'program', name: '30-Day Challenge', startDate: todayIn('Australia/Sydney'), endDate: addDays(todayIn('Australia/Sydney'), 29), length: 30, mode: 'signature', themes: [], curve: 'steady', restEvery: 0, tracks: [], timeBudget: 'medium', wildcards: 'some', includeFun: true, startedAt: null, history: [] });

@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
+import type { Quote } from '../data/quotes';
 
 /**
  * Editorial photography. Photos live in public/images/. If a photo hasn't been added, nothing is
@@ -92,34 +93,37 @@ export function Scene({ kind, className, hero = false }: { kind: SceneKind; clas
   );
 }
 
-export function QuoteCard({ quote, scene, className, layout = 'side' }: { quote: string; scene: SceneKind; className?: string; layout?: 'side' | 'overlay' }) {
+export function QuoteCard({ quote, scene, className, layout = 'side' }: { quote: Quote; scene: SceneKind; className?: string; layout?: 'side' | 'overlay' }) {
   const photo = usePhoto(scene) === 'ok';
   if (layout === 'overlay' && photo)
     return (
       <figure className={clsx('relative overflow-hidden rounded-xl bg-surface-2', className)}>
         <Scene kind={scene} className="absolute inset-0 opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#eceae5] via-[#eceae5]/80 to-transparent dark:from-[#212428] dark:via-[#212428]/80" aria-hidden />
-        <blockquote className="font-display relative max-w-[62%] p-5 text-[19px] leading-snug text-ink">“{quote}”</blockquote>
+        <div className="relative max-w-[80%] p-5 sm:max-w-[62%]">
+          <blockquote className="font-display text-[19px] leading-snug text-ink">“{quote.text}”</blockquote>
+          <Attribution quote={quote} />
+        </div>
       </figure>
     );
   return (
     <figure className={clsx('flex items-stretch gap-4 overflow-hidden rounded-xl bg-surface-2 p-5', layout === 'overlay' && '!h-auto', className)}>
-      <blockquote className="font-display flex flex-1 items-center text-[20px] leading-snug text-ink">“{quote}”</blockquote>
+      <div className="flex flex-1 flex-col justify-center">
+        <blockquote className="font-display text-[20px] leading-snug text-ink">“{quote.text}”</blockquote>
+        <Attribution quote={quote} />
+      </div>
       {photo && <Scene kind={scene} className="w-[38%] shrink-0 rounded-md" />}
     </figure>
   );
 }
 
-const QUOTES = [
-  'Consistency turns intention into results.',
-  'Discipline today builds the freedom you want tomorrow.',
-  'A more intentional you, one day at a time.',
-  'Small steps create real change.',
-  'Progress comes from what you actually do.',
-];
-
-export function quoteFor(day: number): string {
-  return QUOTES[(Math.max(1, day) - 1) % QUOTES.length] ?? QUOTES[0]!;
+function Attribution({ quote }: { quote: Quote }) {
+  return (
+    <figcaption className="mt-2.5 text-[12.5px] text-ink-3">
+      — <span className="text-ink-2">{quote.by}</span>
+      {quote.source && <span className="italic">, {quote.source}</span>}
+    </figcaption>
+  );
 }
 
 /**

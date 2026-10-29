@@ -2,7 +2,8 @@ import clsx from 'clsx';
 import { ArrowLeft, Calculator, Check, ChevronLeft, ChevronRight, ClipboardList, Hourglass, Mountain, Pencil, ShieldAlert, Shuffle, Medal, Target, Timer, Wrench } from 'lucide-react';
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
-import { QuoteCard, quoteFor } from '../../components/Scene';
+import { QuoteCard } from '../../components/Scene';
+import { quoteFor } from '../../data/quotes';
 import { Badge, Button, Difficulty, ProgressRing, RatingPicker, Textarea } from '../../components/ui';
 import { EQUIPMENT } from '../../data/challenges';
 import { challengeKey } from '../../data/library';
@@ -214,7 +215,7 @@ function Detail({ challenge }: { challenge: Challenge }) {
       </>
       )}
 
-      <QuoteCard quote={quoteFor(challenge.day + 1)} scene="peaks" layout="overlay" className="mt-12 h-[150px]" />
+      <QuoteCard quote={quoteFor(challenge.day + 1)} scene="peaks" layout="overlay" className="mt-12 min-h-[150px]" />
       <EditChallengeDialog challenge={challenge} open={editOpen} onClose={() => setEditOpen(false)} />
       <LibraryPicker
         open={swapOpen}
