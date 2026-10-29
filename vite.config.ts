@@ -33,7 +33,7 @@ export default defineConfig({
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,webmanifest,woff2}'],
         // Fetched by the browser only when needed: extended-alphabet fonts and install-time icons.
-        globIgnores: ['**/*latin-ext*', 'icons/seal-icon-*', 'icons/seal-apple-touch-icon.png', 'icons/seal-favicon-192*'],
+        globIgnores: ['og-image.jpg', '**/*latin-ext*', 'icons/seal-icon-*', 'icons/seal-apple-touch-icon.png', 'icons/seal-favicon-192*'],
       },
       devOptions: { enabled: false },
       manifest: {
