@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { Shell } from './components/Shell';
 import { ChallengeDetailPage, CurrentChallengeRedirect } from './features/challenges/ChallengeDetailPage';
 import { ChallengesPage } from './features/challenges/ChallengesPage';
 import { HabitsPage } from './features/habits/HabitsPage';
+import { Landing } from './features/landing/Landing';
 import { LibraryPage } from './features/library/LibraryPage';
 import { MorePage } from './features/more/MorePage';
 import { Onboarding } from './features/onboarding/Onboarding';
@@ -32,7 +33,19 @@ export function App() {
 function Ready() {
   const { data } = useApp();
   useThemeSync();
-  if (!data.settings.onboarded || !data.program) return <Onboarding />;
+  // New visitors see the landing page first; "Start" opens setup.
+  const [started, setStarted] = useState(false);
+  if (!data.settings.onboarded || !data.program)
+    return started ? (
+      <Onboarding />
+    ) : (
+      <Landing
+        onStart={() => {
+          window.scrollTo(0, 0);
+          setStarted(true);
+        }}
+      />
+    );
   return (
     <HashRouter>
       <ReminderScheduler>

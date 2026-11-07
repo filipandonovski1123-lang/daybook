@@ -21,9 +21,22 @@ beforeEach(async () => {
 });
 
 describe('app', () => {
+  it('shows a landing page with every skill track before setup', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole('heading', { name: 'Build real skills, one day at a time.', level: 1 });
+    for (const t of ['Focus & Discipline', 'Money', 'Self-Reliance']) expect(screen.getByText(t)).toBeInTheDocument();
+    expect(screen.queryByText('One new skill a day.')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+    await screen.findByText('One new skill a day.');
+  });
+
   it('onboards with a future start date and shows the countdown, then logs a habit that persists', async () => {
     const user = userEvent.setup();
     render(<App />);
+    // New visitors land on the landing page first.
+    await screen.findByRole('heading', { name: 'Build real skills, one day at a time.', level: 1 });
+    await user.click(screen.getAllByRole('button', { name: 'Start your plan' })[0]!);
     await screen.findByText('One new skill a day.');
     await user.type(screen.getByLabelText(/What should we call you/), 'Sam');
     await user.click(screen.getByRole('button', { name: 'Continue' }));
