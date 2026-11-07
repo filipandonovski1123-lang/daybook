@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { TRACK_BY_ID } from '../data/tracks';
+import { TRACK_BY_ID } from '../data/trackDefs';
 
 /**
  * A track's line symbol (public/symbols/<track>.png). The PNG is used as a mask over the current text

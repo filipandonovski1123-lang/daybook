@@ -1,9 +1,8 @@
 import { buildChallenges, dayId, instantiate } from '../data/challenges';
 import { customToItem, getLibraryItem, type LibraryItem } from '../data/library';
 import { REST_ID } from '../domain/planner';
-import { buildHabits } from '../data/habits';
 import { BACKUP_SNOOZE } from '../domain/backupReminder';
-import { addDays, detectTimeZone, isValidIso, isValidTimeZone, todayIn } from '../domain/dates';
+import { addDays, isValidIso, isValidTimeZone, todayIn } from '../domain/dates';
 import { entryId, isPlannedOn, statusFor, type EntryInput } from '../domain/habits';
 import { endDateFor, isFuture } from '../domain/schedule';
 import {
@@ -35,50 +34,16 @@ import {
 } from '../domain/types';
 import { db, newId } from './db';
 
-export class UserError extends Error {}
+export { UserError } from './errors';
+export { defaultReminders, defaultSettings } from './seed';
+import { UserError } from './errors';
+import { seedBasics } from './seed';
 
-// ---------------------------------------------------------------- defaults & seeding
-
-export function defaultSettings(now = Date.now()): Settings {
-  return {
-    id: 'settings',
-    displayName: '',
-    timezone: detectTimeZone(),
-    wakeTime: '07:30',
-    sleepTargetHours: 8.5,
-    bedtime: '22:30',
-    quietHours: { enabled: true, start: '22:30', end: '07:00' },
-    theme: 'light',
-    palette: 'editorial',
-    hardMode: false,
-    reducedMotion: 'system',
-    hideSensitiveOnToday: false,
-    // Nearly everyone has these; the rest is ticked in Settings so setup stays short.
-    equipment: ['recorder', 'camera', 'kitchen'],
-    constraints: '',
-    onboarded: false,
-    lifeStage: 'early',
-    lastBackupAt: null,
-    backupSnoozedUntil: null,
-    createdAt: now,
-  };
-}
-
-export function defaultReminders(): Reminder[] {
-  return [
-    { id: 'morning', type: 'morning', time: '08:00', enabled: true, delivery: 'system' },
-    { id: 'evening', type: 'evening', time: '20:30', enabled: true, delivery: 'system' },
-    { id: 'bedtime', type: 'bedtime', time: '22:00', enabled: false, delivery: 'system' },
-  ];
-}
-
-/** Seed missing data. Idempotent and never overwrites existing records. */
+/** Seed missing data, including the starter challenges. Idempotent and never overwrites existing records. */
 export async function ensureSeeded(now = Date.now()): Promise<void> {
-  await db.transaction('rw', [db.settings, db.challenges, db.habits, db.reminders], async () => {
-    if (!(await db.settings.get('settings'))) await db.settings.add(defaultSettings(now));
+  await seedBasics(now);
+  await db.transaction('rw', db.challenges, async () => {
     if ((await db.challenges.count()) === 0) await db.challenges.bulkAdd(buildChallenges(now));
-    if ((await db.habits.count()) === 0) await db.habits.bulkAdd(buildHabits());
-    if ((await db.reminders.count()) === 0) await db.reminders.bulkAdd(defaultReminders());
   });
 }
 

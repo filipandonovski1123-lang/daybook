@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { ensureSeeded } from './db/actions';
+import { seedBasics } from './db/seed';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/newsreader/opsz.css';
 import './index.css';
@@ -17,7 +17,7 @@ try {
 
 const root = createRoot(document.getElementById('root')!);
 
-ensureSeeded()
+seedBasics()
   .then(() => {
     // Ask the browser not to evict our data under storage pressure.
     void navigator.storage?.persist?.().catch(() => false);

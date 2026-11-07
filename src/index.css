@@ -2,7 +2,8 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root {
+:root,
+.ls-preview[data-preview='editorial'] {
   /* Editorial Minimal — warm paper, ink, slate blue, stone grey */
   --bg: #f2f0eb;
   --surface: #faf9f6;
@@ -77,7 +78,8 @@
 }
 
 /* Midnight — near-black, crisp sans headings, bright blue and green. Dark-only. */
-:root[data-palette='midnight'] {
+:root[data-palette='midnight'],
+.ls-preview[data-preview='midnight'] {
   --bg: #0b0d10;
   --surface: #111419;
   --surface-2: #161a20;
@@ -114,7 +116,8 @@
 }
 
 /* Forest — deep olive and charcoal, muted sage, earthy and grounded. Dark-only. */
-:root[data-palette='forest'] {
+:root[data-palette='forest'],
+.ls-preview[data-preview='forest'] {
   --bg: #111411;
   --surface: #171b17;
   --surface-2: #1c211c;
@@ -151,7 +154,8 @@
 }
 
 /* Athletic — graphite with electric lime and cyan, bold tight headings. Dark-only. */
-:root[data-palette='athletic'] {
+:root[data-palette='athletic'],
+.ls-preview[data-preview='athletic'] {
   --bg: #0e0f10;
   --surface: #151719;
   --surface-2: #1b1e21;
@@ -487,6 +491,28 @@ dialog[open]::backdrop {
   letter-spacing: -0.012em;
 }
 
+/* Style previews (landing page): one element can show a style regardless of the page's own. */
+.ls-preview {
+  background: var(--bg);
+  color: var(--text);
+}
+.ls-preview[data-preview='editorial'] .font-display,
+.ls-preview[data-preview='forest'] .font-display {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: normal;
+}
+.ls-preview[data-preview='midnight'] .font-display {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.ls-preview[data-preview='athletic'] .font-display {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
 .eyebrow {
   font-size: 11px;
   font-weight: 500;
@@ -552,6 +578,24 @@ dialog[open]::backdrop {
 /* Words fill in one after another as the line crosses the screen. */
 .scroll-motion .ls-word {
   opacity: clamp(0.15, calc((var(--p, 1) * (var(--n) + 2) - var(--i)) * 0.9), 1);
+}
+
+/* Demo phone on the landing page. Its story is scrubbed by --p (0–1); with no --p it shows the end of the day.
+   --t: switch-on point. --a/--b: visible window. */
+.dp-on {
+  opacity: clamp(0, calc((var(--p, 1) - var(--t)) * 25), 1);
+}
+.dp-win {
+  opacity: min(clamp(0, calc((var(--p, 1) - var(--a)) * 25), 1), clamp(0, calc((var(--b) - var(--p, 1)) * 25), 1));
+}
+.dp-notif {
+  transform: translateY(calc((1 - clamp(0, calc(var(--p, 1) * 14 + 0.15), 1)) * -130%));
+}
+.dp-sheet {
+  transform: translateY(calc((1 - clamp(0, calc((var(--p, 1) - 0.74) * 10), 1)) * 110%));
+}
+.dp-ring {
+  stroke-dashoffset: calc(var(--c) * (1 - clamp(0, calc((var(--p, 1) - 0.25) / 0.45), 1)));
 }
 
 /* User-selected reduced motion, plus the OS preference when set to "system". */

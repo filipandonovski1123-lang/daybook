@@ -1,26 +1,12 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
-import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router';
-import { Shell } from './components/Shell';
-import { ChallengeDetailPage, CurrentChallengeRedirect } from './features/challenges/ChallengeDetailPage';
-import { ChallengesPage } from './features/challenges/ChallengesPage';
-import { HabitsPage } from './features/habits/HabitsPage';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Landing } from './features/landing/Landing';
-import { LibraryPage } from './features/library/LibraryPage';
-import { MorePage } from './features/more/MorePage';
-import { Onboarding } from './features/onboarding/Onboarding';
-import { PlanPage } from './features/plan/PlanPage';
-import { ReflectionPage } from './features/reflection/ReflectionPage';
-import { SettingsPage } from './features/settings/SettingsPage';
-import { SummaryPage } from './features/summary/SummaryPage';
-import { TodayPage } from './features/today/TodayPage';
 import { AppDataProvider, useApp } from './lib/appData';
-import { CompletionMoment } from './lib/motion';
 import { setPalette } from './lib/palette';
-import { ReminderScheduler } from './lib/reminderScheduler';
 import { ToastProvider } from './lib/toast';
 
-const ProgressPage = lazy(() => import('./features/progress/ProgressPage'));
-const ToolsPage = lazy(() => import('./features/tools/ToolsPage'));
+// Only the landing page is in the first download; setup and the app load when needed.
+const Onboarding = lazy(() => import('./features/onboarding/Onboarding').then((m) => ({ default: m.Onboarding })));
+const AppRoutes = lazy(() => import('./AppRoutes'));
 
 export function App() {
   return (
@@ -37,7 +23,9 @@ function Ready() {
   const [started, setStarted] = useState(false);
   if (!data.settings.onboarded || !data.program)
     return started ? (
-      <Onboarding />
+      <Suspense fallback={<Splash />}>
+        <Onboarding />
+      </Suspense>
     ) : (
       <Landing
         onStart={() => {
@@ -47,45 +35,9 @@ function Ready() {
       />
     );
   return (
-    <HashRouter>
-      <ReminderScheduler>
-        <Shell>
-          <Suspense fallback={<PageSpinner />}>
-            <PageTransition>
-            <Routes>
-              <Route path="/" element={<TodayPage />} />
-              <Route path="/calendar" element={<ChallengesPage />} />
-              <Route path="/challenges" element={<Navigate to="/calendar" replace />} />
-              <Route path="/challenge" element={<CurrentChallengeRedirect />} />
-              <Route path="/reflection" element={<ReflectionPage />} />
-              <Route path="/more" element={<MorePage />} />
-              <Route path="/plan" element={<PlanPage />} />
-              <Route path="/library" element={<LibraryPage />} />
-              <Route path="/summary" element={<SummaryPage />} />
-              <Route path="/challenges/:id" element={<ChallengeDetailPage />} />
-              <Route path="/habits" element={<HabitsPage />} />
-              <Route path="/progress" element={<ProgressPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/tools" element={<ToolsPage />} />
-              <Route path="/tools/:tool" element={<ToolsPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-            </PageTransition>
-          </Suspense>
-        </Shell>
-        <CompletionMoment />
-      </ReminderScheduler>
-    </HashRouter>
-  );
-}
-
-/** Remounts on route change so each screen enters with a soft fade-and-rise. */
-function PageTransition({ children }: { children: ReactNode }) {
-  const { pathname } = useLocation();
-  return (
-    <div key={pathname} className="animate-page">
-      {children}
-    </div>
+    <Suspense fallback={<Splash />}>
+      <AppRoutes />
+    </Suspense>
   );
 }
 
@@ -128,10 +80,3 @@ function Splash() {
   );
 }
 
-function PageSpinner() {
-  return (
-    <div className="flex justify-center py-24" aria-busy="true" aria-label="Loading">
-      <span className="size-5 animate-spin rounded-full border-2 border-accent border-r-transparent" />
-    </div>
-  );
-}

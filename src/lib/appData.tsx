@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { UserError } from '../db/actions';
+import { UserError } from '../db/errors';
 import { db } from '../db/db';
 import { todayIn } from '../domain/dates';
 import type { Achievement, CustomChallenge, Attempt, Challenge, ChallengeProgress, EvidenceMeta, Habit, HabitEntry, IsoDate, Program, Reflection, Reminder, Settings } from '../domain/types';

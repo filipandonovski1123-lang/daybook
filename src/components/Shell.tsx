@@ -4,6 +4,8 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 import { syncAchievements } from '../db/actions';
 import { Backdrop, type BackdropKind } from './Scene';
+import { Wordmark } from './Wordmark';
+export { Logo, Wordmark } from './Wordmark';
 import { ACHIEVEMENTS, deriveAchievements } from '../domain/stats';
 import { useApp } from '../lib/appData';
 import { useToast } from '../lib/toast';
@@ -32,22 +34,6 @@ const BACKDROP_FOR: [string, BackdropKind][] = [
   ['/habits', 'habits'],
   ['/more', 'calendar'],
 ];
-
-export function Wordmark({ compact = false }: { compact?: boolean }) {
-  const seal = compact ? 'size-[26px]' : 'size-[30px]';
-  return (
-    <span className="flex items-center gap-2">
-      <img src="./icons/seal-mark.png" alt="" className={clsx(seal, 'dark:hidden')} />
-      <img src="./icons/seal-mark-dark.png" alt="" className={clsx(seal, 'hidden dark:block')} />
-      <span className={clsx('font-display leading-none text-ink', compact ? 'text-[22px]' : 'text-[26px]')}>Daybook</span>
-    </span>
-  );
-}
-
-/** Kept for onboarding. */
-export function Logo() {
-  return <Wordmark />;
-}
 
 export function Shell({ children }: { children: ReactNode }) {
   const { data } = useApp();

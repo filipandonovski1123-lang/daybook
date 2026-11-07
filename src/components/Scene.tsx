@@ -3,6 +3,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
 import type { Quote } from '../data/quotes';
 import { usePalette } from '../lib/palette';
+import type { Palette } from '../domain/types';
 
 /**
  * Editorial photography. Photos live in public/images/, with optional per-theme versions in
@@ -54,8 +55,9 @@ function subscribe(fn: () => void) {
 }
 
 /** The theme's own version of a photo if it exists, otherwise the default. */
-function useThemedImage(url: string): { url: string; state: Probe } {
-  const palette = usePalette();
+function useThemedImage(url: string, override?: Palette): { url: string; state: Probe } {
+  const active = usePalette();
+  const palette = override ?? active;
   const themed = palette === 'editorial' ? url : url.replace('./images/', `./images/${palette}/`);
   const themedState = useImage(themed);
   const baseState = useImage(url);
@@ -69,8 +71,9 @@ export function usePhoto(kind: SceneKind): Probe {
   return useThemedImage(PHOTO[kind]).state;
 }
 
-export function Scene({ kind, className, hero = false }: { kind: SceneKind; className?: string; hero?: boolean }) {
-  const { url, state: photo } = useThemedImage(PHOTO[kind]);
+/** `palette` shows a specific style's photo (style previews); otherwise the active style's. */
+export function Scene({ kind, className, hero = false, palette }: { kind: SceneKind; className?: string; hero?: boolean; palette?: Palette }) {
+  const { url, state: photo } = useThemedImage(PHOTO[kind], palette);
   const layer = useRef<HTMLDivElement>(null);
 
   // Hero only: gentle parallax while it's on screen. Written straight to the style (no re-renders).
@@ -100,7 +103,7 @@ export function Scene({ kind, className, hero = false }: { kind: SceneKind; clas
   return (
     <div className={clsx('relative overflow-hidden bg-surface-3', className)} aria-hidden>
       <div ref={layer} className={clsx('absolute inset-x-0 will-change-transform', hero ? '-top-[10%] h-[120%]' : 'inset-y-0')}>
-        <img src={url} alt="" className={clsx('size-full object-cover', kind === 'coast' && 'object-[22%_center]', hero && 'animate-hero')} />
+        <img src={url} alt="" loading={hero ? undefined : 'lazy'} className={clsx('size-full object-cover', kind === 'coast' && 'object-[22%_center]', hero && 'animate-hero')} />
       </div>
     </div>
   );
