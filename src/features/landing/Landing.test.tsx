@@ -21,6 +21,6 @@ describe('landing page motion', () => {
     expect(container.querySelector('.scroll-motion')).toBeNull();
     expect(container.querySelector('#how')).not.toHaveAttribute('data-scroll');
     expect(screen.getByText('Do the Thing You’ve Been Afraid Of')).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Your progress is yours.' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Your data stays yours.' })).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ArrowRight, BarChart3, Bell, Check, Flag, HardDrive, ListChecks, NotebookPen, Shield, Target } from 'lucide-react';
+import { ArrowRight, BarChart3, Bell, Camera, Check, Cloud, Flag, HardDrive, ListChecks, NotebookPen, Shield, Target, Timer } from 'lucide-react';
 import { lazy, Suspense, useState, type CSSProperties, type ReactNode } from 'react';
 import { QuoteCard, Scene } from '../../components/Scene';
 import { TrackSymbol } from '../../components/TrackSymbol';
@@ -16,27 +16,34 @@ import { SYNC_AVAILABLE } from '../../sync/config';
 const AccountDialog = lazy(() => import('../../sync/AccountDialog').then((m) => ({ default: m.AccountDialog })));
 
 const STEPS = [
-  ['Choose what to get better at', 'Pick from 14 skill tracks, or let Daybook suggest some for your stage of life. Choose how long, how much time a day and how fast it gets harder.'],
-  ['Do one challenge a day', 'Real things, not worksheets: send the message, give the talk, cook the meal, ask the question. Each step is a little harder than the last.'],
-  ['Watch it compound', 'Tick off habits, write a short reflection, and see your streaks, progress and personal bests grow — then get a summary when you finish.'],
+  ['Pick your skills', 'Choose from 14 tracks, or take suggestions for your stage of life. Set the length (3 to 100 days), how much time you have each day, and how quickly it ramps up.'],
+  ['Do one challenge a day', 'Real tasks, not worksheets: send the message, give the talk, cook the meal, ask the question. Each one is a step up from the last.'],
+  ['See it add up', 'Tick off your habits, write a line about the day, and track your streaks and personal bests. When the plan ends, you get a summary of what changed.'],
 ] as const;
 
 /** The phone's day, in the same order and timing as its screen (see Phone.tsx). */
 const DAY = [
-  { when: 'Morning', title: 'Your challenge arrives', body: 'A reminder with today’s step, so you know what’s next before you’ve opened the app.', a: -1, b: 0.24 },
-  { when: 'During the day', title: 'Do the real thing', body: 'Make the ask. Mark it done when it’s genuinely done — that’s the whole point.', a: 0.24, b: 0.42 },
-  { when: 'Through the day', title: 'Tick off a few habits', body: 'Sleep, reading, focus, a workout. Small, rotating through the week, one tap each.', a: 0.42, b: 0.73 },
-  { when: 'Evening', title: 'A one-minute check-in', body: 'How did it go? One line is enough. Then Day 12 is done, and tomorrow is a little harder.', a: 0.73, b: 1.01 },
+  { when: 'Morning', title: 'Today’s challenge arrives', body: 'A reminder tells you today’s step, so you know what to do before you even open the app.', a: -1, b: 0.24 },
+  { when: 'During the day', title: 'Do it for real', body: 'Today’s step: make a small ask. Only mark it done once you’ve actually done it.', a: 0.24, b: 0.42 },
+  { when: 'Any time', title: 'Tick off your habits', body: 'Sleep, reading, a workout — one tap each. They rotate through the week, so no day gets crowded.', a: 0.42, b: 0.73 },
+  { when: 'Evening', title: 'A one-minute check-in', body: 'Write a line or two about how it went. Day 12 is done, and tomorrow’s step is a little harder.', a: 0.73, b: 1.01 },
 ];
 
 const STYLES: { value: Palette; label: string; body: string; a: number; b: number }[] = [
-  { value: 'editorial', label: 'Editorial', body: 'Warm paper, serif headings and slate blue. Light or dark.', a: -1, b: 0.25 },
-  { value: 'midnight', label: 'Midnight', body: 'Near-black, crisp headings, bright blue and green.', a: 0.25, b: 0.5 },
-  { value: 'forest', label: 'Forest', body: 'Deep olive and charcoal with muted sage. Earthy and calm.', a: 0.5, b: 0.75 },
-  { value: 'athletic', label: 'Athletic', body: 'Graphite with electric lime. Bold, sharp and high-energy.', a: 0.75, b: 1.01 },
+  { value: 'editorial', label: 'Editorial', body: 'Warm paper, serif headings and slate blue. Comes in light and dark.', a: -1, b: 0.25 },
+  { value: 'midnight', label: 'Midnight', body: 'Near-black with clean type and bright blue and green accents.', a: 0.25, b: 0.5 },
+  { value: 'forest', label: 'Forest', body: 'Deep olive and charcoal with soft sage. Calm and earthy.', a: 0.5, b: 0.75 },
+  { value: 'athletic', label: 'Athletic', body: 'Graphite with electric lime. Bold and high-energy.', a: 0.75, b: 1.01 },
 ];
 
-const PRIVACY_LINE = 'Your progress is yours.';
+const FACTS = [
+  ['14', 'skill tracks, 8 steps each'],
+  ['66', 'wildcard challenges for variety'],
+  ['3–100', 'days — you choose the length'],
+  ['0', 'ads, trackers or paywalls'],
+] as const;
+
+const PRIVACY_LINE = 'Your data stays yours.';
 const PHONE = 'h-[500px] w-[244px] md:h-[600px] md:w-[292px]';
 
 /** A pinned section needs its whole content on screen; on short phones it scrolls normally instead. */
@@ -93,7 +100,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
           <div className="ls-hero-text animate-fade-up">
             <p className="eyebrow">Daily challenges · Habits · Reflection</p>
             <h1 className="font-display mt-4 text-[44px] leading-[1.04] md:text-[64px]">Build real skills, one day at a time.</h1>
-            <p className="mt-5 max-w-md text-[16px] leading-relaxed text-ink-2 md:text-[17px]">One real challenge a day, each building on the last — plus a few simple habits and a one-minute evening check-in.</p>
+            <p className="mt-5 max-w-md text-[16px] leading-relaxed text-ink-2 md:text-[17px]">Choose what you want to get better at — confidence, fitness, money, public speaking and more. Each day you get one real-world challenge, a bit harder than the day before, plus a few small habits and a one-minute check-in at night.</p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Button size="lg" variant="primary" onClick={onStart} icon={<ArrowRight className="size-4" />} className="flex-row-reverse">
                 Start your plan
@@ -103,7 +110,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
               </a>
             </div>
             <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-ink-2">
-              {['Free', 'No account needed', 'Works offline', 'Private by default'].map((t) => (
+              {['Free', 'No sign-up required', 'Works offline', 'No ads or tracking'].map((t) => (
                 <li key={t} className="flex items-center gap-1.5">
                   <Check className="size-3.5 text-slate" aria-hidden />
                   {t}
@@ -124,12 +131,21 @@ export function Landing({ onStart }: { onStart: () => void }) {
           </div>
         </div>
 
+        <dl className="mx-auto grid max-w-5xl grid-cols-2 gap-x-6 gap-y-6 px-5 pt-12 md:grid-cols-4">
+          {FACTS.map(([n, label], i) => (
+            <div key={label} data-reveal style={vars({ d: i })} className="flex flex-col border-l border-line pl-4">
+              <dt className="order-2 mt-1 text-[13px] leading-snug text-ink-2">{label}</dt>
+              <dd className="font-display tnum order-1 text-[30px] leading-none md:text-[36px]">{n}</dd>
+            </div>
+          ))}
+        </dl>
+
         {/* How it works — pinned; the three steps light up in turn */}
         <section id="how" data-scroll={pin.how ? 'pin' : undefined} className={clsx('scroll-mt-6', pin.how ? 'h-[260vh]' : 'py-16 md:py-24')} aria-labelledby="how-title">
           <div data-reveal={pin.how ? undefined : true} className={clsx('mx-auto w-full max-w-5xl px-5', pin.how && 'sticky top-0 flex h-[100svh] flex-col justify-center')}>
             <p className="eyebrow">How it works</p>
             <h2 id="how-title" className="font-display mt-3 text-[32px] leading-tight md:text-[44px]">
-              Small steps that actually add up.
+              Small steps that add up.
             </h2>
             {pin.how && (
               <div className="mt-6 h-px w-full bg-line" aria-hidden>
@@ -192,8 +208,9 @@ export function Landing({ onStart }: { onStart: () => void }) {
             <div data-reveal>
               <p className="eyebrow">14 skill tracks</p>
               <h2 id="tracks-title" className="font-display mt-3 text-[32px] leading-tight md:text-[44px]">
-                Skills that still matter in a year.
+                Skills that last.
               </h2>
+              <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-ink-2">Each track climbs from easy to genuinely hard in 8 steps. Pick one or mix several in the same plan.</p>
             </div>
             <ul className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {TRACKS.map((t, i) => (
@@ -217,7 +234,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
               <h2 id="ladder-title" className="font-display mt-3 text-[30px] leading-tight md:text-[44px]">
                 Courage, one step at a time.
               </h2>
-              <p className="mt-4 hidden text-[15px] leading-relaxed text-ink-2 md:block">Every track is a ladder. You never jump straight to the hard part; each day makes the next one possible. Wildcard days mix in something different for variety.</p>
+              <p className="mt-4 hidden text-[15px] leading-relaxed text-ink-2 md:block">Every track works like a ladder: you start small, and each step prepares you for the next. Optional wildcard days mix in something different.</p>
             </div>
             <ol className="relative rounded-xl border border-line bg-surface py-1.5">
               <span className="absolute bottom-6 left-[29px] top-6 w-px bg-line" aria-hidden>
@@ -252,7 +269,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
             <div>
               <p className="eyebrow">Four styles</p>
               <h2 id="styles-title" className="font-display mt-3 text-[30px] leading-tight md:text-[44px]">
-                Make it feel like yours.
+                Make it look like yours.
               </h2>
               {pin.styles ? (
                 <div className="relative mt-5 h-[92px] md:mt-8 md:h-[110px]">
@@ -264,7 +281,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
                   ))}
                 </div>
               ) : (
-                <p className="mt-4 max-w-md text-[15px] leading-relaxed text-ink-2">Editorial, Midnight, Forest or Athletic — each with its own colours, type and photos. Switch any time in Settings.</p>
+                <p className="mt-4 max-w-md text-[15px] leading-relaxed text-ink-2">Editorial, Midnight, Forest or Athletic — each with its own colours, fonts and photos. Change it any time in Settings.</p>
               )}
             </div>
             {pin.styles ? (
@@ -298,30 +315,39 @@ export function Landing({ onStart }: { onStart: () => void }) {
         <section className="border-t border-line py-16 md:py-24" aria-labelledby="features-title">
           <div className="mx-auto max-w-5xl px-5">
             <div data-reveal>
-              <p className="eyebrow">Everything in one place</p>
+              <p className="eyebrow">What’s inside</p>
               <h2 id="features-title" className="font-display mt-3 text-[32px] leading-tight md:text-[44px]">
-                Built for the days you don’t feel like it.
+                Made for the days you don’t feel like it.
               </h2>
             </div>
             <div className="mt-10 grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
               <Feature d={0} icon={<Target />} title="A plan that fits you">
-                Any length from 3 to 100 days, with rest days if you want them. Swap any day, or write your own challenges.
+                Anywhere from 3 to 100 days, with rest days if you want them. Swap any day or write your own challenges.
               </Feature>
               <Feature d={1} icon={<ListChecks />} title="Habits that rotate">
-                Start with a few simple habits. They rotate through the week, so no day is a wall of tasks.
+                Start with a handful of small habits. They rotate through the week, so no day turns into a long checklist.
               </Feature>
               <Feature d={2} icon={<NotebookPen />} title="Evening reflection">
-                A one-minute check-in on how the day went, so you notice what’s actually working.
+                A one-minute check-in each night, so you can see what’s actually working.
               </Feature>
               <Feature d={0} icon={<BarChart3 />} title="Honest progress">
-                Streaks, completion and personal bests. Missed days stay visible — you decide how to catch up.
+                Streaks, completion rates and personal bests. Missed days stay visible, and you choose how to catch up.
               </Feature>
               <Feature d={1} icon={<Bell />} title="Gentle reminders">
-                A morning nudge with today’s challenge and an evening check-in, at times you choose.
+                A morning nudge with today’s challenge and an evening check-in, at the times you pick.
               </Feature>
               <Feature d={2} icon={<Flag />} title="Hard Mode, if you want it">
-                Stricter rules for real accountability: tasks only count when the criteria are met, and missed days need a plan.
+                Stricter rules for real accountability: a task only counts when its criteria are met, and missed days need a recovery plan.
               </Feature>
+              <Feature d={0} icon={<Camera />} title="Photo proof">
+                Attach photos and files to a challenge, and compare before and after side by side.
+              </Feature>
+              <Feature d={1} icon={<Timer />} title="Built-in tools">
+                Timers and tests that save your results straight into your challenges and habits.
+              </Feature>
+              {SYNC_AVAILABLE && (<Feature d={2} icon={<Cloud />} title="Sync, if you want it">
+                An optional account lets you use Daybook on several devices, encrypted with your password.
+              </Feature>)}
             </div>
           </div>
         </section>
@@ -339,11 +365,11 @@ export function Landing({ onStart }: { onStart: () => void }) {
                 ))}
               </h2>
               <p data-reveal className="mt-4 max-w-2xl text-[15px] leading-relaxed text-ink-2">
-                No account needed, no ads, no tracking. Everything you write and log stays on your own device. Want it on more than one? Turn on optional sync: your data is encrypted on your device with your password before it’s uploaded, so nobody else can read it — not even us.
+                No ads and no tracking. Everything you write and log is stored on your device, and you don’t need an account. If you want it on more than one device, turn on sync: your data is encrypted with your password before it leaves your phone, so only you can read it.
               </p>
               <p data-reveal style={vars({ d: 1 })} className="mt-4 flex items-center gap-2 text-[13px] text-ink-3">
                 <HardDrive className="size-4" aria-hidden />
-                Without an account, clearing your browser’s data for this site deletes it, so keep a backup.
+                Without an account, clearing this site’s data in your browser erases everything, so save a backup from Settings now and then.
               </p>
             </div>
           </div>
@@ -356,21 +382,21 @@ export function Landing({ onStart }: { onStart: () => void }) {
           </div>
           <div data-reveal className="mt-14 text-center">
             <h2 id="start-title" className="font-display text-[36px] leading-tight md:text-[52px]">
-              Day 1 can be today.
+              Start Day 1 today.
             </h2>
-            <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-ink-2">Setup takes about two minutes. Nothing to sign up for.</p>
+            <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-ink-2">Setup takes about two minutes, and there’s nothing to sign up for.</p>
             <Button size="lg" variant="primary" onClick={onStart} icon={<ArrowRight className="size-4" />} className="mt-7 flex-row-reverse">
               Start your plan
             </Button>
             <p className="mx-auto mt-6 max-w-sm text-[13px] leading-relaxed text-ink-3">
-              Tip: add it to your Home Screen to use it like an app. On iPhone, tap Share → Add to Home Screen. On Android, use the browser menu → Install app.
+              Tip: add Daybook to your Home Screen to use it like an app. On iPhone, tap Share → Add to Home Screen. On Android, open the browser menu → Install app.
             </p>
           </div>
         </section>
       </main>
 
       <footer className="border-t border-line py-8 text-center text-[12.5px] text-ink-3">
-        <p>Daybook · Free, private and offline-ready.</p>
+        <p>Daybook · Free, private, works offline.</p>
       </footer>
     </div>
   );
