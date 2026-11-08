@@ -3,6 +3,7 @@ import { todayIn, addDays } from '../domain/dates';
 import * as A from './actions';
 import { deleteAllData, exportData, importData, parseBackup } from './backup';
 import { db } from './db';
+import { applyTitleRenames } from './seed';
 import { SIGNATURE_PLAN } from '../data/library';
 
 const TZ = 'Australia/Sydney';
@@ -55,6 +56,18 @@ describe('seeding & onboarding', () => {
     expect(await db.challenges.count()).toBe(30);
     expect(await db.habits.count()).toBeGreaterThan(15);
     expect(await db.reminders.count()).toBe(3);
+  });
+
+  it('gives saved plans the reworded step titles, but never overrides an edit', async () => {
+    await A.ensureSeeded();
+    const [a, b] = (await db.challenges.toArray()).slice(0, 2);
+    await db.challenges.update(a!.id, { libraryId: 'courage-2', title: 'Make a Small Ask' });
+    await db.challenges.update(b!.id, { libraryId: 'courage-3', title: 'Rejection Reps' });
+    await A.updateChallenge(b!.id, { title: 'Rejection Reps' });
+    expect(await applyTitleRenames()).toBe(1);
+    expect((await db.challenges.get(a!.id))?.title).toBe('Ask for Something Small');
+    expect((await db.challenges.get(b!.id))?.title).toBe('Rejection Reps');
+    expect(await applyTitleRenames()).toBe(0);
   });
 
   it('onboarding with a future date stores the program and preferences', async () => {

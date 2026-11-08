@@ -2,6 +2,7 @@ import { buildHabits } from '../data/habits';
 import { detectTimeZone } from '../domain/dates';
 import type { Reminder, Settings } from '../domain/types';
 import { db } from './db';
+import { RENAMED_TITLES } from '../data/renamedTitles';
 
 export function defaultSettings(now = Date.now()): Settings {
   return {
@@ -46,5 +47,23 @@ export async function seedBasics(now = Date.now()): Promise<void> {
     if (!(await db.settings.get('settings'))) await db.settings.add(defaultSettings(now));
     if ((await db.habits.count()) === 0) await db.habits.bulkAdd(buildHabits());
     if ((await db.reminders.count()) === 0) await db.reminders.bulkAdd(defaultReminders());
+  });
+  await applyTitleRenames();
+}
+
+/**
+ * Gives saved plans the reworded step titles, but only for challenges still carrying the old title
+ * that the person never edited. Safe to run on every start (and after an import or a sync pull).
+ */
+export async function applyTitleRenames(): Promise<number> {
+  return db.transaction('rw', [db.challenges, db.revisions], async () => {
+    const stale = await db.challenges.filter((c) => !!c.libraryId && RENAMED_TITLES[c.libraryId]?.from === c.title).toArray();
+    let changed = 0;
+    for (const c of stale) {
+      if ((await db.revisions.where('challengeId').equals(c.id).count()) > 0) continue;
+      await db.challenges.update(c.id, { title: RENAMED_TITLES[c.libraryId!]!.to });
+      changed++;
+    }
+    return changed;
   });
 }

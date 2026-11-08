@@ -24,7 +24,7 @@ const STEPS = [
 /** The phone's day, in the same order and timing as its screen (see Phone.tsx). */
 const DAY = [
   { when: 'Morning', title: 'Today’s challenge arrives', body: 'A reminder tells you today’s step, so you know what to do before you even open the app.', a: -1, b: 0.24 },
-  { when: 'During the day', title: 'Do it for real', body: 'Today’s step: make a small ask. Only mark it done once you’ve actually done it.', a: 0.24, b: 0.42 },
+  { when: 'During the day', title: 'Do it for real', body: 'Today’s challenge: ask for something small. Only tick it off once you’ve really done it.', a: 0.24, b: 0.42 },
   { when: 'Any time', title: 'Tick off your habits', body: 'Sleep, reading, a workout — one tap each. They rotate through the week, so no day gets crowded.', a: 0.42, b: 0.73 },
   { when: 'Evening', title: 'A one-minute check-in', body: 'Write a line or two about how it went. Day 12 is done, and tomorrow’s step is a little harder.', a: 0.73, b: 1.01 },
 ];

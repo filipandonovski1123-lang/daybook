@@ -5,13 +5,13 @@
 
 /** Courage & Confidence, steps 1–8: title and estimated minutes. */
 export const COURAGE_LADDER: { title: string; minutes: number }[] = [
-  { title: 'Map Your Comfort Zone', minutes: 20 },
-  { title: 'Make a Small Ask', minutes: 20 },
-  { title: 'Rejection Reps', minutes: 45 },
-  { title: 'Speak First', minutes: 30 },
+  { title: 'List What You Avoid', minutes: 20 },
+  { title: 'Ask for Something Small', minutes: 20 },
+  { title: 'Get Comfortable Hearing No', minutes: 45 },
+  { title: 'Talk to Three New People', minutes: 30 },
   { title: 'Ask for Honest Feedback', minutes: 45 },
   { title: 'Cold-Email Someone You Admire', minutes: 60 },
-  { title: 'Go After an Opportunity', minutes: 120 },
+  { title: 'Apply for Something That Stretches You', minutes: 120 },
   { title: 'Do the Thing You’ve Been Afraid Of', minutes: 180 },
 ];
 
