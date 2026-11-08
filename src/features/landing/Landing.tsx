@@ -65,7 +65,7 @@ const minutes = (m: number) => (m < 60 ? `${m} min` : `${Math.round(m / 30) / 2}
  */
 export function Landing({ onStart }: { onStart: () => void }) {
   const motion = useScrollScenes();
-  const [signIn, setSignIn] = useState(false);
+  const [account, setAccount] = useState<'signin' | 'create' | null>(null);
   const [pin] = useState(() => ({
     how: motion && fitsPinned(760),
     day: motion && fitsPinned(770),
@@ -79,7 +79,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
         <Wordmark />
         <div className="flex items-center gap-1">
           {SYNC_AVAILABLE && (
-            <Button size="sm" variant="ghost" onClick={() => setSignIn(true)}>
+            <Button size="sm" variant="ghost" onClick={() => setAccount('signin')}>
               Sign in
             </Button>
           )}
@@ -88,9 +88,9 @@ export function Landing({ onStart }: { onStart: () => void }) {
           </Button>
         </div>
       </header>
-      {signIn && (
+      {account && (
         <Suspense fallback={null}>
-          <AccountDialog open onClose={() => setSignIn(false)} />
+          <AccountDialog open initialMode={account} onClose={() => setAccount(null)} onCreated={onStart} />
         </Suspense>
       )}
 
@@ -109,6 +109,14 @@ export function Landing({ onStart }: { onStart: () => void }) {
                 See how it works
               </a>
             </div>
+            {SYNC_AVAILABLE && (
+              <p className="mt-4 text-[13.5px] text-ink-2">
+                Want it on more than one device?{' '}
+                <button type="button" className="font-medium text-slate underline-offset-4 hover:underline" onClick={() => setAccount('create')}>
+                  Create a free account
+                </button>
+              </p>
+            )}
             <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-ink-2">
               {['Free', 'No sign-up required', 'Works offline', 'No ads or tracking'].map((t) => (
                 <li key={t} className="flex items-center gap-1.5">
@@ -388,6 +396,18 @@ export function Landing({ onStart }: { onStart: () => void }) {
             <Button size="lg" variant="primary" onClick={onStart} icon={<ArrowRight className="size-4" />} className="mt-7 flex-row-reverse">
               Start your plan
             </Button>
+            {SYNC_AVAILABLE && (
+              <p className="mt-4 text-[13.5px] text-ink-2">
+                <button type="button" className="font-medium text-slate underline-offset-4 hover:underline" onClick={() => setAccount('create')}>
+                  Create an account
+                </button>
+                {' · '}
+                <button type="button" className="font-medium text-slate underline-offset-4 hover:underline" onClick={() => setAccount('signin')}>
+                  Sign in
+                </button>
+                <span className="mt-1 block text-[12.5px] text-ink-3">Optional — only needed to sync between devices.</span>
+              </p>
+            )}
             <p className="mx-auto mt-6 max-w-sm text-[13px] leading-relaxed text-ink-3">
               Tip: add Daybook to your Home Screen to use it like an app. On iPhone, tap Share → Add to Home Screen. On Android, open the browser menu → Install app.
             </p>

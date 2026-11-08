@@ -10,7 +10,7 @@ type Mode = 'signin' | 'create';
 type Phase = 'form' | 'conflict' | 'locked' | 'reset-sent';
 
 /** Create an account or sign in. Loaded on demand, so the sync code only downloads when used. */
-export function AccountDialog({ open, onClose, initialMode = 'signin' }: { open: boolean; onClose: () => void; initialMode?: Mode }) {
+export function AccountDialog({ open, onClose, initialMode = 'signin', onCreated }: { open: boolean; onClose: () => void; initialMode?: Mode; onCreated?: () => void }) {
   const toast = useToast();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [phase, setPhase] = useState<Phase>('form');
@@ -40,8 +40,9 @@ export function AccountDialog({ open, onClose, initialMode = 'signin' }: { open:
       if (password !== confirm) return setError('The passwords don’t match.');
       void run(async () => {
         await createAccount(email, password);
-        toast.show('Account created. This device is now syncing.');
+        toast.show(onCreated ? 'Account created. Now set up your plan — it syncs automatically.' : 'Account created. This device is now syncing.');
         onClose();
+        onCreated?.();
       });
     } else
       void run(async () => {
