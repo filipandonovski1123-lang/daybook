@@ -3,6 +3,7 @@ import { Landing } from './features/landing/Landing';
 import { AppDataProvider, useApp } from './lib/appData';
 import { setPalette } from './lib/palette';
 import { ToastProvider } from './lib/toast';
+import { SyncRunner } from './sync/SyncRunner';
 
 // Only the landing page is in the first download; setup and the app load when needed.
 const Onboarding = lazy(() => import('./features/onboarding/Onboarding').then((m) => ({ default: m.Onboarding })));
@@ -17,6 +18,15 @@ export function App() {
 }
 
 function Ready() {
+  return (
+    <>
+      <Screens />
+      <SyncRunner />
+    </>
+  );
+}
+
+function Screens() {
   const { data } = useApp();
   useThemeSync();
   // New visitors see the landing page first; "Start" opens setup.

@@ -18,6 +18,7 @@ import { notificationSupport, requestPermission, showSystemNotification } from '
 import { useReminders } from '../../lib/reminderScheduler';
 import { useToast } from '../../lib/toast';
 import { TimezoneInput } from '../onboarding/Onboarding';
+import { SyncSection } from '../../sync/SyncSection';
 
 const PALETTES: { value: Palette; label: string; body: string; swatch: string[] }[] = [
   { value: 'editorial', label: 'Editorial', body: 'Warm paper, serif headings and slate blue. Light or dark.', swatch: ['#f2f0eb', '#2b333b', '#56718b'] },
@@ -135,6 +136,7 @@ export function SettingsPage() {
           ))}
         </div>
       </Section>
+      <SyncSection Section={Section} />
       <DataSection />
     </div>
   );
@@ -370,7 +372,7 @@ function DataSection() {
   const mb = (b?: number) => (b === undefined ? '?' : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
   return (
-    <Section title="Your data" description={`Stored in this browser’s IndexedDB on this device only. No accounts, analytics or trackers. Clearing site data in your browser deletes it — export a backup regularly. ${lastBackup ? `Last backup: ${formatInstant(lastBackup, data.settings.timezone)}.` : "No backup saved yet."}`}>
+    <Section title="Your data" description={`Stored in this browser’s IndexedDB on this device. No analytics or trackers, and nothing is uploaded unless you turn on encrypted sync above. Clearing site data in your browser deletes it — export a backup regularly. ${lastBackup ? `Last backup: ${formatInstant(lastBackup, data.settings.timezone)}.` : "No backup saved yet."}`}>
       {storage && (
         <p className="mb-4 flex items-center gap-2 text-xs text-ink-3">
           <HardDrive className="size-3.5" /> Using {mb(storage.usage)} of {mb(storage.quota)} available · {storage.persisted ? 'protected from automatic eviction' : 'browser may evict under storage pressure'}

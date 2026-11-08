@@ -137,13 +137,15 @@ export function parseBackup(text: string): ParseResult {
 
 /**
  * Replace all data with the backup, in one transaction: if anything fails nothing changes.
- * Evidence entries without file data (exported without files) are skipped rather than stored empty.
+ * Evidence entries without file data (exported without files) are skipped rather than stored empty —
+ * unless `keepLocalFiles` is set (sync), in which case files already on this device are kept.
  */
-export async function importData(backup: Backup): Promise<void> {
+export async function importData(backup: Backup, opts: { keepLocalFiles?: boolean } = {}): Promise<void> {
   const d = backup.data;
-  const withData = d.evidence.filter((e) => e.data);
-  const evidence = withData.map(({ data: _data, ...meta }) => meta);
-  const files = withData.map((e) => ({ id: e.id, bytes: base64ToBytes(e.data ?? '') }));
+  const local = opts.keepLocalFiles ? new Map((await db.evidenceFiles.toArray()).map((f) => [f.id, f])) : new Map<string, { id: string; bytes: ArrayBuffer }>();
+  const kept = d.evidence.filter((e) => e.data || local.has(e.id));
+  const evidence = kept.map(({ data: _data, ...meta }) => meta);
+  const files = kept.map((e) => (e.data ? { id: e.id, bytes: base64ToBytes(e.data) } : local.get(e.id)!));
   await db.transaction('rw', db.tables, async () => {
     await Promise.all(db.tables.map((t) => t.clear()));
     await db.settings.bulkAdd(d.settings);

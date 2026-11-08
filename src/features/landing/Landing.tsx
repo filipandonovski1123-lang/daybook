@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { ArrowRight, BarChart3, Bell, Check, Flag, HardDrive, ListChecks, NotebookPen, Shield, Target } from 'lucide-react';
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { lazy, Suspense, useState, type CSSProperties, type ReactNode } from 'react';
 import { QuoteCard, Scene } from '../../components/Scene';
 import { TrackSymbol } from '../../components/TrackSymbol';
 import { Button } from '../../components/ui';
@@ -11,6 +11,9 @@ import type { Palette } from '../../domain/types';
 import { COURAGE_LADDER } from './content';
 import { DemoToday, PhoneFrame } from './Phone';
 import { useScrollScenes } from './useScrollScenes';
+import { SYNC_AVAILABLE } from '../../sync/config';
+
+const AccountDialog = lazy(() => import('../../sync/AccountDialog').then((m) => ({ default: m.AccountDialog })));
 
 const STEPS = [
   ['Choose what to get better at', 'Pick from 14 skill tracks, or let Daybook suggest some for your stage of life. Choose how long, how much time a day and how fast it gets harder.'],
@@ -55,6 +58,7 @@ const minutes = (m: number) => (m < 60 ? `${m} min` : `${Math.round(m / 30) / 2}
  */
 export function Landing({ onStart }: { onStart: () => void }) {
   const motion = useScrollScenes();
+  const [signIn, setSignIn] = useState(false);
   const [pin] = useState(() => ({
     how: motion && fitsPinned(760),
     day: motion && fitsPinned(770),
@@ -66,10 +70,22 @@ export function Landing({ onStart }: { onStart: () => void }) {
     <div className={clsx('min-h-dvh overflow-x-clip', motion && 'scroll-motion')}>
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 pt-[max(18px,env(safe-area-inset-top))]">
         <Wordmark />
-        <Button size="sm" variant="primary" onClick={onStart}>
-          Start
-        </Button>
+        <div className="flex items-center gap-1">
+          {SYNC_AVAILABLE && (
+            <Button size="sm" variant="ghost" onClick={() => setSignIn(true)}>
+              Sign in
+            </Button>
+          )}
+          <Button size="sm" variant="primary" onClick={onStart}>
+            Start
+          </Button>
+        </div>
       </header>
+      {signIn && (
+        <Suspense fallback={null}>
+          <AccountDialog open onClose={() => setSignIn(false)} />
+        </Suspense>
+      )}
 
       <main>
         {/* Hero */}
@@ -87,7 +103,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
               </a>
             </div>
             <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-ink-2">
-              {['Free', 'No account', 'Works offline', 'Nothing leaves your device'].map((t) => (
+              {['Free', 'No account needed', 'Works offline', 'Private by default'].map((t) => (
                 <li key={t} className="flex items-center gap-1.5">
                   <Check className="size-3.5 text-slate" aria-hidden />
                   {t}
@@ -323,11 +339,11 @@ export function Landing({ onStart }: { onStart: () => void }) {
                 ))}
               </h2>
               <p data-reveal className="mt-4 max-w-2xl text-[15px] leading-relaxed text-ink-2">
-                No account, no ads, no tracking. Everything you write and log is stored on your own device and never uploaded anywhere. Save a backup file whenever you like and restore it on another phone.
+                No account needed, no ads, no tracking. Everything you write and log stays on your own device. Want it on more than one? Turn on optional sync: your data is encrypted on your device with your password before it’s uploaded, so nobody else can read it — not even us.
               </p>
               <p data-reveal style={vars({ d: 1 })} className="mt-4 flex items-center gap-2 text-[13px] text-ink-3">
                 <HardDrive className="size-4" aria-hidden />
-                Clearing your browser’s data for this site deletes it, so keep a backup.
+                Without an account, clearing your browser’s data for this site deletes it, so keep a backup.
               </p>
             </div>
           </div>

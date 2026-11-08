@@ -2,7 +2,7 @@
 
 A private, offline-first personal growth tracker: one new challenge a day for a length you choose, a rotating habit system, personal bests, progress analytics, reminders and an optional Hard Mode accountability system.
 
-No account, no server, no analytics. Everything is stored in your browser on your device.
+No account needed, no analytics. Everything is stored in your browser on your device, with optional end-to-end encrypted sync between devices.
 
 ## Challenges and plans
 
@@ -41,7 +41,15 @@ npm test
 
 The production build in `dist/` is a static site and an installable PWA. Host it on any static host that serves HTTPS (Netlify, Cloudflare Pages, GitHub Pages, Vercel). No server code or environment variables are needed. Routing uses `#/` URLs, so no rewrite rules are needed either. Then open it on your phone and use **Add to Home Screen**. It works fully offline after the first load.
 
-Data is stored **per browser and per device**. The phone and the laptop don't sync, so pick one as your main device, or move data between them with Settings → Export / Import.
+Data is stored **per browser and per device**. To use it on several devices, turn on **Settings → Account & sync**, or move data with Settings → Export / Import.
+
+## Accounts and sync (optional)
+
+- Firebase Auth (email and password) plus one Firestore document per person, reached over REST with no Firebase SDK (`src/sync/`). The sync code only downloads for people who use it.
+- **End-to-end encrypted:** a key is derived on the device from the password (PBKDF2-SHA-256, 310,000 iterations) and the whole snapshot is encrypted with AES-256-GCM before upload. The server only holds ciphertext. A forgotten password means the cloud copy can't be decrypted; after a reset, a device with the data can replace it.
+- Last change wins, and if two devices both changed it always asks which copy to keep. Photos and files stay on the device they were added on.
+- `firestore.rules` lets each signed-in person read and write only `sync/{uid}` and its `parts`. Deploy rules with `npx firebase-tools deploy --only firestore:rules`.
+- To use your own project, put its web `apiKey` and `projectId` in `src/sync/config.ts`, enable Email/Password sign-in, and deploy the rules. With the config empty, all account UI is hidden.
 
 ## Photos
 
@@ -99,7 +107,7 @@ src/
 ## Known limitations
 
 - Reminders can't fire while the app is fully closed (see the table above). The calendar export covers that case.
-- There's no cross-device sync, by design (local-only, private). Use export/import to move data.
+- Sync covers your data but not attached photos and files (Firebase's free plan has no file storage).
 - Clearing the browser's site data deletes everything, so export a backup regularly.
 - Attachments are capped at 50 MB each and limited by the browser's storage quota. Settings shows current usage.
 - Measurement fields and success rules are built in per challenge. Editing a challenge changes its text, plan and estimates, but not its measurement fields or rules.

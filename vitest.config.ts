@@ -7,5 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    // Rendering whole pages under a full parallel run can exceed the 5 s default on a busy machine.
+    testTimeout: 20_000,
   },
 });

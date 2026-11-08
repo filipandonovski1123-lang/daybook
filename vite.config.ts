@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
 
 const CSP =
   "default-src 'self'; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; " +
-  "script-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'";
+  "script-src 'self'; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'";
 
 /** Adds a strict Content-Security-Policy to the production HTML only (dev needs inline HMR scripts). */
 function cspPlugin(): Plugin {
